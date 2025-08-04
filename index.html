@@ -8,7 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
-    /* Stili originali invariati */
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap');
     body { margin: 0; font-family: 'Rubik', sans-serif; background-color: #f0f2f5; color: #333; }
     #map { height: 60vh; width: 100%; z-index: 1; }
@@ -68,7 +67,7 @@
 
     let map = L.map('map').setView([41.9, 12.5], 13);
     let tempLat = null, tempLon = null;
-    let markers = [];
+    let markers = [], expirationTimers = [];
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
@@ -133,6 +132,8 @@
       list.innerHTML = "";
       markers.forEach(m => map.removeLayer(m));
       markers = [];
+      expirationTimers.forEach(clearInterval);
+      expirationTimers = [];
 
       const { data, error } = await supa.from('checkins').select('*');
       if (error) return alert("Errore nel caricamento dei check-in");
@@ -145,27 +146,25 @@
         const created = new Date(c.created_at);
         const diff = (now - created) / 1000 / 3600;
         const matchCity = (c.city || "").toLowerCase().includes(cityFilter);
-        const matchDate = !dateFilter || created.toISOString().slice(0,10) === dateFilter;
+        const matchDate = !dateFilter || created.toISOString().slice(0, 10) === dateFilter;
         return diff <= 12 && matchCity && matchDate;
       }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
       for (const c of filtered) {
         const createdAt = new Date(c.created_at);
         const expiresAt = new Date(createdAt.getTime() + 12 * 60 * 60 * 1000);
-        const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
-        const hours = Math.floor(remaining / 3600);
-        const minutes = Math.floor((remaining % 3600) / 60);
-        const seconds = remaining % 60;
 
         const item = document.createElement("div");
         item.className = "checkin-item";
-        item.innerHTML = `<b>${c.nickname}</b>: ${c.description} (${c.city || ""})<br>
-          <div class='expiration-timer'>Scade tra ${hours}h ${minutes}m ${seconds}s</div>
+        item.innerHTML = `
+          <b>${c.nickname}</b>: ${c.description} (${c.city || ""})<br>
+          <div class='expiration-timer' id='timer-${c.id}'>Scade tra...</div>
           <div id="comments-${c.id}"></div>
           <div class='comment-input'>
             <input type='text' id='comment-input-${c.id}' placeholder='Scrivi un commento...'>
             <button onclick='addComment(${c.id})'>Invia</button>
-          </div>`;
+          </div>
+        `;
         item.onclick = () => map.setView([c.lat, c.lon], 16);
         list.appendChild(item);
 
@@ -174,6 +173,23 @@
         markers.push(marker);
 
         loadComments(c.id);
+
+        const timerElement = document.getElementById(`timer-${c.id}`);
+        const interval = setInterval(() => {
+          const now = new Date();
+          const diff = Math.max(0, Math.floor((expiresAt - now) / 1000));
+          if (diff <= 0) {
+            timerElement.textContent = "Scaduto";
+            clearInterval(interval);
+            renderCheckins();
+          } else {
+            const h = Math.floor(diff / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            const s = diff % 60;
+            timerElement.textContent = `Scade tra ${h}h ${m}m ${s}s`;
+          }
+        }, 1000);
+        expirationTimers.push(interval);
       }
     }
 
@@ -194,7 +210,7 @@
         const date = new Date(c.created_at);
         const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const dateString = date.toLocaleDateString();
-        return `<div class='comment'>🗨️ ${c.content} <span style='color:#888;font-size:11px;'>(${dateString} ${timeString})</span></div>`;
+        return `<div class='comment'>🔈 ${c.content} <span style='color:#888;font-size:11px;'>(${dateString} ${timeString})</span></div>`;
       }).join("");
     }
 
