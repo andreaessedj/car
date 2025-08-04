@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CarSex Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap');
     body {
@@ -154,11 +156,16 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    let tempLat = null, tempLon = null;
+    const { createClient } = supabase;
+    const supa = createClient(
+      'https://seweuyiyvicoqvtgjwss.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko'
+    );
+
     let map = L.map('map').setView([41.9, 12.5], 13);
-    let markers = {};
+    let tempLat = null, tempLon = null;
+    let markers = [];
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
@@ -166,23 +173,15 @@
 
     function geoCheckIn() {
       if (!navigator.geolocation) return alert("Geolocalizzazione non supportata.");
-
-      navigator.permissions?.query({name:'geolocation'}).then(result => {
-        if (result.state === "denied") {
-          return alert("Permessi di localizzazione negati. Abilitali nel browser.");
-        }
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            const { latitude, longitude } = pos.coords;
-            map.setView([latitude, longitude], 15);
-            showModal(latitude, longitude);
-          },
-          err => {
-            alert("Impossibile ottenere la posizione. Riprova o usa il click manuale sulla mappa.");
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-      });
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+          map.setView([latitude, longitude], 15);
+          showModal(latitude, longitude);
+        },
+        () => alert("Errore durante il recupero della posizione."),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
     }
 
     map.on('click', e => {
@@ -207,96 +206,60 @@
       const nickname = document.getElementById('nickname').value.trim();
       const description = document.getElementById('description').value.trim();
       const photoInput = document.getElementById('photoInput');
-
-      if (!nickname || !description || tempLat === null || tempLon === null) {
-        alert("Compila tutti i campi prima di confermare.");
-        return;
-      }
+      if (!nickname || !description || tempLat === null || tempLon === null) return alert("Compila tutti i campi.");
 
       const reader = new FileReader();
       reader.onload = async function () {
         const photoData = reader.result;
-        const timestamp = Date.now();
         const city = await getCityFromCoords(tempLat, tempLon);
-
-        const checkin = {
-          id: timestamp,
-          nickname,
-          description,
-          lat: tempLat,
-          lon: tempLon,
-          city,
-          photo: photoData,
-          time: new Date(timestamp).toLocaleString()
-        };
-
-        const all = JSON.parse(localStorage.getItem('checkins') || '[]');
-        all.push(checkin);
-        localStorage.setItem('checkins', JSON.stringify(all));
-
-        renderCheckins();
+        await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData });
         hideModal();
+        renderCheckins();
       };
-
-      if (photoInput.files[0]) {
-        reader.readAsDataURL(photoInput.files[0]);
-      } else {
-        reader.onload();
-      }
+      if (photoInput.files[0]) reader.readAsDataURL(photoInput.files[0]);
+      else reader.onload();
     }
 
     function getCityFromCoords(lat, lon) {
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-      return fetch(url)
-        .then(res => res.json())
-        .then(data => data.address?.city || data.address?.town || data.address?.village || "");
+      return fetch(url).then(res => res.json()).then(data => data.address?.city || data.address?.town || data.address?.village || "");
     }
 
-    function addMarker(c) {
-      const marker = L.marker([c.lat, c.lon]).addTo(map);
-      marker.bindPopup(`
-        <strong>${c.nickname}</strong><br>${c.description}<br>
-        <em>${c.time} ${c.city ? `- ${c.city}` : ''}</em><br>
-        <a href="https://maps.google.com/?q=${c.lat},${c.lon}" target="_blank">📍 Apri in Google Maps</a>
-      `);
-      markers[c.id] = marker;
+    async function renderCheckins() {
+      const list = document.getElementById("checkinList");
+      list.innerHTML = "";
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      const { data, error } = await supa.from('checkins').select('*');
+      if (error) return alert("Errore nel caricamento dei check-in");
+
+      const now = new Date();
+      const cityFilter = document.getElementById('cityFilter').value.toLowerCase();
+      const dateFilter = document.getElementById('dateFilter').value;
+
+      const filtered = data.filter(c => {
+        const created = new Date(c.created_at);
+        const diff = (now - created) / 1000 / 3600;
+        const matchCity = (c.city || "").toLowerCase().includes(cityFilter);
+        const matchDate = !dateFilter || created.toISOString().slice(0,10) === dateFilter;
+        return diff <= 12 && matchCity && matchDate;
+      }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      for (const c of filtered) {
+        const item = document.createElement("div");
+        item.className = "checkin-item";
+        item.textContent = `${c.nickname}: ${c.description} (${c.city || ""})`;
+        item.onclick = () => map.setView([c.lat, c.lon], 16);
+        list.appendChild(item);
+
+        const marker = L.marker([c.lat, c.lon]).addTo(map);
+        marker.bindPopup(`<b>${c.nickname}</b><br>${c.description}<br><a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank'>Naviga</a>`);
+        markers.push(marker);
+      }
     }
 
-    function renderCheckins() {
-      const list = document.getElementById('checkinList');
-      const cityFilter = document.getElementById('cityFilter')?.value.toLowerCase() || "";
-      const dateFilter = document.getElementById('dateFilter')?.value || "";
-
-      list.innerHTML = '';
-      Object.values(markers).forEach(m => map.removeLayer(m));
-      markers = {};
-
-      const all = (JSON.parse(localStorage.getItem('checkins') || '[]') || [])
-        .filter(c => (Date.now() - c.id) <= 12 * 60 * 60 * 1000)
-        .filter(c => (c.city || '').toLowerCase().includes(cityFilter))
-        .filter(c => {
-          if (!dateFilter) return true;
-          const d = new Date(c.id);
-          return d.toISOString().split("T")[0] === dateFilter;
-        })
-        .sort((a, b) => b.id - a.id);
-
-      all.forEach(c => {
-        addMarker(c);
-        const div = document.createElement('div');
-        div.className = 'checkin-item';
-        div.innerHTML = `<strong>${c.nickname}</strong><br>${c.description}<br><em>${c.time}${c.city ? ' - ' + c.city : ''}</em>`;
-        div.onclick = () => {
-          map.setView([c.lat, c.lon], 15);
-          markers[c.id]?.openPopup();
-        };
-        list.appendChild(div);
-      });
-    }
-
-    window.onload = () => {
-      renderCheckins();
-    }
+    renderCheckins();
   </script>
 </body>
 </html>
