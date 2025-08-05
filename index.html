@@ -1,3 +1,60 @@
+    /* Responsive/mobile layout */
+    @media (max-width: 700px) {
+      #sidebar {
+        flex-direction: column;
+        align-items: flex-start;
+        height: auto;
+        min-height: 72px;
+        padding: 12px 8px 8px 8px;
+        gap: 10px;
+      }
+      #sidebar img.logo {
+        height: 56px;
+        width: 56px;
+        margin-right: 0;
+        margin-bottom: 8px;
+        border-radius: 14px;
+      }
+      #sidebarContent {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        width: 100%;
+      }
+      #sidebarContent > * {
+        margin: 0 0 6px 0;
+      }
+      #sidebar button, #sidebar input, #sidebar label, #sidebar .distance-group {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        font-size: 15px;
+      }
+      #sidebar input[type="text"] {
+        font-size: 15px;
+        padding: 10px 8px;
+      }
+      #sidebar input[type="range"] {
+        width: 100%;
+      }
+      #sidebar .distance-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+      #sidebar p {
+        margin: 0 0 0 0;
+        font-size: 12px;
+      }
+      #map {
+        top: calc(56px + 24px + 8px + 8px); /* logo + paddings */
+        height: 45vh;
+      }
+      #checkinList {
+        padding: 12px 6px 12px 6px;
+        font-size: 15px;
+      }
+    }
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -298,16 +355,27 @@
       return fetch(url).then(res => res.json()).then(data => data.address?.city || data.address?.town || data.address?.village || "");
     }
 
+    let renderCheckinsLock = false;
     async function renderCheckins() {
+      if (renderCheckinsLock) return;
+      renderCheckinsLock = true;
       const list = document.getElementById("checkinList");
       list.innerHTML = "";
-      markers.forEach(m => map.removeLayer(m));
-      markers = [];
+      // Rimuovi tutti i marker dalla mappa solo se sono presenti
+      if (markers && markers.length) {
+        markers.forEach(m => {
+          if (m && map.hasLayer(m)) map.removeLayer(m);
+        });
+        markers = [];
+      }
       expirationTimers.forEach(clearInterval);
       expirationTimers = [];
 
       const { data, error } = await supa.from('checkins').select('*');
-      if (error) return alert("Errore nel caricamento dei check-in");
+      if (error) {
+        renderCheckinsLock = false;
+        return alert("Errore nel caricamento dei check-in");
+      }
 
       const now = new Date();
       const cityFilter = document.getElementById('cityFilter').value.toLowerCase();
@@ -388,6 +456,7 @@
         }, 1000);
         expirationTimers.push(interval);
       }
+      renderCheckinsLock = false;
     }
 
     async function addComment(checkinId) {
