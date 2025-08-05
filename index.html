@@ -31,10 +31,40 @@
     /* Ottimizzazione mobile */
     @media (max-width: 700px) {
       #sidebar {
+        position: relative;
         height: 54px !important;
         min-height: 0 !important;
         padding: 4px 4px 4px 4px !important;
         gap: 6px !important;
+      }
+      #sidebarToggle.sidebar-toggle {
+        display: inline-block !important;
+        background: #fff6f6;
+        color: #ff3366;
+        border: 1px solid #ff3366;
+        border-radius: 8px;
+        font-size: 22px;
+        font-weight: bold;
+        margin-left: 8px;
+        padding: 2px 12px;
+        cursor: pointer;
+        height: 38px;
+        vertical-align: middle;
+      }
+      #sidebarContent {
+        display: none !important;
+        position: absolute;
+        left: 0;
+        top: 54px;
+        width: 100vw !important;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(255,51,102,0.08);
+        border-bottom: 1.5px solid #ffe3e3;
+        z-index: 1200;
+        padding: 8px 4px 8px 4px !important;
+      }
+      #sidebar.open #sidebarContent {
+        display: flex !important;
       }
       #sidebar img.logo {
         height: 38px !important;
@@ -96,6 +126,7 @@
   </style>
   <div id="sidebar">
     <img src="logo.png" alt="Logo" class="logo" />
+    <button id="sidebarToggle" class="sidebar-toggle" aria-label="Apri/chiudi barra" style="display:none;">☰</button>
     <div id="sidebarContent">
       <button onclick="geoCheckIn()" style="padding:10px 18px;font-size:16px;font-weight:600;background:linear-gradient(90deg,#ff3366 60%,#ff7a5c 100%);color:#fff;border:none;border-radius:8px;box-shadow:0 2px 8px rgba(255,51,102,0.12);transition:background 0.3s;">📍 Localizzati</button>
       <input type="text" id="cityFilter" placeholder="Cerca per città..." oninput="renderCheckins()" style="padding:10px 12px;border-radius:7px;border:1px solid #e0e0e0;font-size:15px;box-shadow:0 1px 4px rgba(0,0,0,0.04);outline:none;transition:border 0.2s;">
@@ -154,5 +185,32 @@
 
   <script src="main.js"></script>
   <script src="chat.js"></script>
+  <script>
+    // Sidebar collassabile mobile
+    document.addEventListener('DOMContentLoaded', function() {
+      var sidebar = document.getElementById('sidebar');
+      var toggle = document.getElementById('sidebarToggle');
+      var content = document.getElementById('sidebarContent');
+      function isMobile() { return window.innerWidth <= 700; }
+      function updateSidebar() {
+        if (isMobile()) {
+          toggle.style.display = 'inline-block';
+          content.style.display = sidebar.classList.contains('open') ? 'flex' : 'none';
+        } else {
+          toggle.style.display = 'none';
+          content.style.display = 'flex';
+          sidebar.classList.remove('open');
+        }
+      }
+      if (toggle && sidebar && content) {
+        toggle.addEventListener('click', function(e) {
+          sidebar.classList.toggle('open');
+          updateSidebar();
+        });
+        window.addEventListener('resize', updateSidebar);
+        updateSidebar();
+      }
+    });
+  </script>
 </body>
 </html>
