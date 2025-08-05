@@ -32,10 +32,11 @@
     @media (max-width: 700px) {
       #sidebar {
         position: relative;
-        height: 54px !important;
         min-height: 0 !important;
         padding: 4px 4px 4px 4px !important;
         gap: 6px !important;
+        transition: height 0.3s;
+        z-index: 10;
       }
       #sidebarToggle.sidebar-toggle {
         display: inline-block !important;
@@ -53,18 +54,29 @@
       }
       #sidebarContent {
         display: none !important;
-        position: absolute;
-        left: 0;
-        top: 54px;
+        position: static !important;
         width: 100vw !important;
         background: #fff;
-        box-shadow: 0 8px 32px rgba(255,51,102,0.18);
-        border-bottom: 1.5px solid #ffe3e3;
-        z-index: 3001;
+        box-shadow: none;
+        border-bottom: none;
         padding: 8px 4px 8px 4px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 6px !important;
+        transition: max-height 0.3s, box-shadow 0.3s;
       }
       #sidebar.open #sidebarContent {
         display: flex !important;
+        position: static !important;
+        box-shadow: 0 8px 32px rgba(255,51,102,0.18);
+        border-bottom: 1.5px solid #ffe3e3;
+      }
+      #sidebar.open {
+        height: auto !important;
+      }
+      #sidebar:not(.open) {
+        height: 54px !important;
+        overflow: hidden;
       }
       #sidebar img.logo {
         height: 38px !important;
@@ -106,10 +118,16 @@
         font-size: 11px !important;
       }
       #map {
-        top: 54px !important;
-        height: 48vh !important;
+        top: 0 !important;
         min-height: 180px !important;
         max-height: 55vh !important;
+        transition: margin-top 0.3s;
+      }
+      #sidebar.open ~ #map {
+        margin-top: 180px !important;
+      }
+      #sidebar:not(.open) ~ #map {
+        margin-top: 54px !important;
       }
       #checkinList {
         padding: 8px 2px 8px 2px !important;
@@ -192,18 +210,29 @@
       var sidebar = document.getElementById('sidebar');
       var toggle = document.getElementById('sidebarToggle');
       var content = document.getElementById('sidebarContent');
+      var map = document.getElementById('map');
       function isMobile() { return window.innerWidth <= 700; }
       function updateSidebar() {
         if (isMobile()) {
           toggle.style.display = 'inline-block';
-          content.style.display = sidebar.classList.contains('open') ? 'flex' : 'none';
+          if (sidebar.classList.contains('open')) {
+            content.style.display = 'flex';
+            sidebar.style.height = 'auto';
+            map.style.marginTop = content.offsetHeight + 'px';
+          } else {
+            content.style.display = 'none';
+            sidebar.style.height = '54px';
+            map.style.marginTop = '54px';
+          }
         } else {
           toggle.style.display = 'none';
           content.style.display = 'flex';
           sidebar.classList.remove('open');
+          sidebar.style.height = '';
+          map.style.marginTop = '';
         }
       }
-      if (toggle && sidebar && content) {
+      if (toggle && sidebar && content && map) {
         toggle.addEventListener('click', function(e) {
           sidebar.classList.toggle('open');
           updateSidebar();
