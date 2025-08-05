@@ -12,19 +12,15 @@
     body { margin: 0; font-family: 'Rubik', sans-serif; background-color: #f0f2f5; color: #333; }
     #map {
       position: absolute;
-      top: 0;
+      top: 72px;
+      left: 0;
       right: 0;
-      left: 260px;
       height: 60vh;
-      width: calc(100% - 260px);
+      width: 100%;
       z-index: 1;
       border-radius: 0 0 18px 0;
       box-shadow: 0 6px 24px rgba(255,51,102,0.08);
-      transition: left 0.3s ease, width 0.3s ease;
-    }
-    #sidebar.collapsed ~ #map {
-      left: 48px;
-      width: calc(100% - 48px);
+      transition: top 0.3s ease;
     }
     #filters {
       padding: 12px 24px;
@@ -56,7 +52,7 @@
       position: absolute;
       right: 0;
       bottom: 0;
-      left: 260px;
+      left: 0;
       height: 32vh;
       overflow-y: auto;
       padding: 22px 28px 18px 28px;
@@ -66,10 +62,6 @@
       border-radius: 18px 0 0 0;
       box-shadow: 0 -6px 24px rgba(255,51,102,0.08);
       transition: left 0.3s ease, width 0.3s ease;
-    }
-    #sidebar.collapsed ~ #checkinList {
-      left: 48px;
-      width: calc(100% - 48px);
     }
     .checkin-item {
       margin-bottom: 14px;
@@ -138,47 +130,69 @@
       position: fixed;
       top: 0;
       left: 0;
-      height: 100vh;
-      width: 260px;
-      background: linear-gradient(120deg,#fff 80%,#ffe3e3 100%);
-      box-shadow: 2px 0 18px rgba(255,51,102,0.10);
+      width: 100vw;
+      height: 72px;
+      background: linear-gradient(90deg,#fff 80%,#ffe3e3 100%);
+      box-shadow: 0 2px 18px rgba(255,51,102,0.10);
       z-index: 1100;
       display: flex;
-      flex-direction: column;
-      border-right: 1.5px solid #ffe3e3;
-      transition: width 0.3s ease;
-      overflow-y: auto;
+      flex-direction: row;
+      align-items: center;
+      border-bottom: 1.5px solid #ffe3e3;
+      transition: height 0.3s ease;
+      overflow-x: auto;
+      overflow-y: visible;
+      padding: 0 24px;
+      gap: 24px;
     }
-    #sidebar.collapsed {
-      width: 48px;
-    }
-    #sidebarToggle {
-      background: none;
-      border: none;
-      font-size: 26px;
-      padding: 14px 10px 8px 10px;
-      cursor: pointer;
-      color: #ff3366;
-      align-self: flex-start;
-      margin-bottom: 8px;
-      transition: color 0.2s;
-    }
-    #sidebarToggle:hover {
-      color: #ff7a5c;
+    #sidebar img.logo {
+      height: 128px;
+      width: 128px;
+      margin-right: 32px;
+      border-radius: 28px;
+      object-fit: cover;
+      box-shadow: 0 4px 24px rgba(255,51,102,0.15);
+      background: #fff;
     }
     #sidebarContent {
-      flex: 1;
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 24px 18px 12px 18px;
-      transition: opacity 0.3s ease;
-      max-width: 100%;
+      flex-direction: row;
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+      padding: 0;
+      margin: 0;
       box-sizing: border-box;
     }
-    #sidebar.collapsed #sidebarContent {
-      opacity: 0;
-      pointer-events: none;
+    #sidebarContent > * {
+      margin: 0 6px 0 0;
+    }
+    #sidebar h2 {
+      margin: 0 18px 0 0;
+      color: #ff3366;
+      font-weight: 700;
+      letter-spacing: 1px;
+      font-size: 1.3em;
+      white-space: nowrap;
+    }
+    #sidebar button, #sidebar input, #sidebar label {
+      margin-bottom: 0 !important;
+    }
+    #sidebar input[type="text"], #sidebar input[type="range"] {
+      width: auto;
+      min-width: 160px;
+      max-width: 220px;
+    }
+    #sidebar .distance-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #sidebar p {
+      margin: 0 0 0 12px;
+      font-size: 13px;
+      color: #888;
+      white-space: nowrap;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -188,16 +202,15 @@
 
 <body>
   <div id="sidebar">
-    <button id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+    <img src="logo.png" alt="Logo" class="logo" />
     <div id="sidebarContent">
-      <h2 style="margin-bottom:18px;color:#ff3366;font-weight:700;letter-spacing:1px;font-size:1.3em;">CarSex Map</h2>
-      <button onclick="geoCheckIn()" style="width:100%;padding:14px 0;font-size:17px;font-weight:600;background:linear-gradient(90deg,#ff3366 60%,#ff7a5c 100%);color:#fff;border:none;border-radius:8px;box-shadow:0 2px 8px rgba(255,51,102,0.12);margin-bottom:18px;transition:background 0.3s;">📍 Localizzati</button>
-      <input type="text" id="cityFilter" placeholder="Cerca per città..." oninput="renderCheckins()" style="width:100%;padding:10px 12px;margin-bottom:14px;border-radius:7px;border:1px solid #e0e0e0;font-size:15px;box-shadow:0 1px 4px rgba(0,0,0,0.04);outline:none;transition:border 0.2s;">
-      <div style="width:100%;margin-bottom:14px;">
+      <button onclick="geoCheckIn()" style="padding:10px 18px;font-size:16px;font-weight:600;background:linear-gradient(90deg,#ff3366 60%,#ff7a5c 100%);color:#fff;border:none;border-radius:8px;box-shadow:0 2px 8px rgba(255,51,102,0.12);transition:background 0.3s;">📍 Localizzati</button>
+      <input type="text" id="cityFilter" placeholder="Cerca per città..." oninput="renderCheckins()" style="padding:10px 12px;border-radius:7px;border:1px solid #e0e0e0;font-size:15px;box-shadow:0 1px 4px rgba(0,0,0,0.04);outline:none;transition:border 0.2s;">
+      <div class="distance-group">
         <label for="distanceFilter" style="font-size:14px;color:#ff3366;font-weight:600;">Distanza max (km): <span id="distanceValue">50</span></label>
-        <input type="range" id="distanceFilter" min="1" max="100" value="50" oninput="document.getElementById('distanceValue').textContent=this.value; renderCheckins();" style="width:100%;">
+        <input type="range" id="distanceFilter" min="1" max="100" value="50" oninput="document.getElementById('distanceValue').textContent=this.value; renderCheckins();">
       </div>
-      <p style="margin-top:0;font-size:13px;color:#888;">oppure clicca sulla mappa</p>
+      <p>oppure clicca sulla mappa</p>
     </div>
   </div>
 
@@ -398,17 +411,8 @@
       }).join("");
     }
 
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('collapsed');
-      // Sposta la mappa
-      const mapDiv = document.getElementById('map');
-      if (sidebar.classList.contains('collapsed')) {
-        mapDiv.style.marginLeft = '48px';
-      } else {
-        mapDiv.style.marginLeft = '260px';
-      }
-    }
+    // La funzione toggleSidebar non serve più, la barra è sempre orizzontale
+    function toggleSidebar() {}
 
     // Avvia subito la localizzazione per il filtro distanza e centra la mappa SOLO quando la posizione è ottenuta
     if (navigator.geolocation) {
