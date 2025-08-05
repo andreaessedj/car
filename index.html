@@ -103,8 +103,63 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     .closeBtn { position: absolute; top: 8px; right: 12px; font-size: 20px; cursor: pointer; color: #888; }
     .closeBtn:hover { color: #000; }
-    #modalContent input, #modalContent textarea { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-    #modalContent button { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; }
+    #modalContent input, #modalContent textarea, #modalContent select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      background: #f8f8fa;
+      box-shadow: 0 1px 4px rgba(255,51,102,0.06);
+      transition: border 0.2s;
+    }
+    #modalContent input:focus, #modalContent textarea:focus, #modalContent select:focus {
+      border: 1.5px solid #ff3366;
+      outline: none;
+    }
+    #modalContent label {
+      font-size: 15px;
+      color: #ff3366;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+    #modalContent .flag-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    #modalContent .flag-group label {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+      margin-bottom: 0;
+      margin-right: 4px;
+      display: inline-block;
+    }
+    #modalContent .flag-group input[type="radio"] {
+      margin-right: 3px;
+    }
+    #modalContent .flag-group input[type="radio"]:focus {
+      outline: 1.5px solid #ff3366;
+    }
+    #modalContent button {
+      background: linear-gradient(90deg,#ff3366 60%,#ff7a5c 100%);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(255,51,102,0.10);
+      transition: background 0.3s;
+    }
+    #modalContent button:hover {
+      background: linear-gradient(90deg,#ff7a5c 60%,#ff3366 100%);
+    }
     #checkinList {
       position: absolute;
       right: 0;
@@ -281,9 +336,24 @@
   <div id="modal">
     <div id="modalContent">
       <span class="closeBtn" onclick="hideModal()">✖</span>
-      <h3>Nuovo check-in</h3>
+      <h3 style="color:#ff3366;margin-bottom:18px;">Nuovo check-in</h3>
+      <label for="nickname">Nome (anonimo)</label>
       <input type="text" id="nickname" placeholder="Il tuo nome (anonimo)">
+      <label for="description">Dettagli</label>
       <textarea id="description" placeholder="Scrivi dettagli..." rows="3"></textarea>
+      <div class="flag-group">
+        <label>Genere:</label>
+        <label><input type="radio" name="gender" value="M"> M</label>
+        <label><input type="radio" name="gender" value="F"> F</label>
+        <label><input type="radio" name="gender" value="Trav"> Trav</label>
+        <label><input type="radio" name="gender" value="Trans"> Trans</label>
+      </div>
+      <div class="flag-group">
+        <label>Stato:</label>
+        <label><input type="radio" name="status" value="Coppia"> Coppia</label>
+        <label><input type="radio" name="status" value="Single"> Single</label>
+      </div>
+      <label for="photoInput">Foto (opzionale)</label>
       <input type="file" accept="image/*" id="photoInput">
       <button onclick="confirmCheckIn()">Conferma</button>
     </div>
@@ -336,18 +406,27 @@
       const nickname = document.getElementById('nickname').value.trim();
       const description = document.getElementById('description').value.trim();
       const photoInput = document.getElementById('photoInput');
-      if (!nickname || !description || tempLat === null || tempLon === null) return alert("Compila tutti i campi.");
+      const gender = document.querySelector('input[name="gender"]:checked')?.value || "";
+      const status = document.querySelector('input[name="status"]:checked')?.value || "";
+      if (!nickname || !description || tempLat === null || tempLon === null || !gender || !status) return alert("Compila tutti i campi e seleziona genere e stato.");
 
-      const reader = new FileReader();
-      reader.onload = async function () {
-        const photoData = reader.result;
+      const insertCheckin = async (photoData) => {
         const city = await getCityFromCoords(tempLat, tempLon);
-        await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData });
+        const { error } = await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData ?? null, gender, status });
+        if (error) {
+          alert("Errore nel salvataggio del check-in: " + (error.message || error));
+          return;
+        }
         hideModal();
         renderCheckins();
       };
-      if (photoInput.files[0]) reader.readAsDataURL(photoInput.files[0]);
-      else reader.onload();
+      if (photoInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function () { insertCheckin(reader.result); };
+        reader.readAsDataURL(photoInput.files[0]);
+      } else {
+        insertCheckin(null);
+      }
     }
 
     function getCityFromCoords(lat, lon) {
@@ -419,10 +498,17 @@
         const createdAt = new Date(c.created_at);
         const expiresAt = new Date(createdAt.getTime() + 6 * 60 * 60 * 1000);
 
+        // Mostra stringa vuota se gender/status non presenti
+        const genderLabel = c.gender ? c.gender : "";
+        const statusLabel = c.status ? c.status : "";
+
         const item = document.createElement("div");
         item.className = "checkin-item";
         item.innerHTML = `
-          <b>${c.nickname}</b>: ${c.description} (${c.city || ""})<br>
+          <b>${c.nickname}</b> 
+          ${genderLabel ? `<span style=\"background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;\">${genderLabel}</span>` : ""}
+          ${statusLabel ? `<span style=\"background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;\">${statusLabel}</span>` : ""}
+          : ${c.description} (${c.city || ""})<br>
           <div class='expiration-timer' id='timer-${c.id}'>Scade tra...</div>
           <div id="comments-${c.id}"></div>
           <div class='comment-input'>
@@ -434,7 +520,7 @@
         list.appendChild(item);
 
         const marker = L.marker([c.lat, c.lon]).addTo(map);
-        marker.bindPopup(`<b>${c.nickname}</b><br>${c.description}<br><a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank'>Naviga</a>`);
+        marker.bindPopup(`<b>${c.nickname}</b> ${genderLabel ? `<span style='background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;'>${genderLabel}</span>` : ""} ${statusLabel ? `<span style='background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;'>${statusLabel}</span>` : ""}<br>${c.description}<br><a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank'>Naviga</a>`);
         markers.push(marker);
 
         loadComments(c.id);
