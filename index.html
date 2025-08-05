@@ -318,6 +318,18 @@
     <div id="sidebarContent">
       <button onclick="geoCheckIn()" style="padding:10px 18px;font-size:16px;font-weight:600;background:linear-gradient(90deg,#ff3366 60%,#ff7a5c 100%);color:#fff;border:none;border-radius:8px;box-shadow:0 2px 8px rgba(255,51,102,0.12);transition:background 0.3s;">📍 Localizzati</button>
       <input type="text" id="cityFilter" placeholder="Cerca per città..." oninput="renderCheckins()" style="padding:10px 12px;border-radius:7px;border:1px solid #e0e0e0;font-size:15px;box-shadow:0 1px 4px rgba(0,0,0,0.04);outline:none;transition:border 0.2s;">
+      <select id="genderFilter" onchange="renderCheckins()" style="padding:10px 12px;border-radius:7px;border:1px solid #e0e0e0;font-size:15px;">
+        <option value="">Genere: tutti</option>
+        <option value="M">M</option>
+        <option value="F">F</option>
+        <option value="Trav">Trav</option>
+        <option value="Trans">Trans</option>
+      </select>
+      <select id="statusFilter" onchange="renderCheckins()" style="padding:10px 12px;border-radius:7px;border:1px solid #e0e0e0;font-size:15px;">
+        <option value="">Stato: tutti</option>
+        <option value="Coppia">Coppia</option>
+        <option value="Single">Single</option>
+      </select>
       <div class="distance-group">
         <label for="distanceFilter" style="font-size:14px;color:#ff3366;font-weight:600;">Distanza max (km): <span id="distanceValue">50</span></label>
         <input type="range" id="distanceFilter" min="1" max="100" value="50" oninput="document.getElementById('distanceValue').textContent=this.value; renderCheckins();">
@@ -362,6 +374,13 @@
   <script>
     const { createClient } = supabase;
     const supa = createClient('https://seweuyiyvicoqvtgjwss.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko');
+    // Notifiche in tempo reale per i check-in
+    supa.channel('realtime:checkins')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, payload => {
+        // Aggiorna la lista check-in solo se c'è una modifica
+        renderCheckins();
+      })
+      .subscribe();
 
     let map = L.map('map').setView([41.9, 12.5], 13);
     let tempLat = null, tempLon = null;
@@ -412,10 +431,16 @@
 
       const insertCheckin = async (photoData) => {
         const city = await getCityFromCoords(tempLat, tempLon);
-        const { error } = await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData ?? null, gender, status });
+        const { data, error } = await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData ?? null, gender, status }).select();
         if (error) {
           alert("Errore nel salvataggio del check-in: " + (error.message || error));
           return;
+        }
+        // Salva check-in utente in localStorage per storico personale
+        let myCheckins = JSON.parse(localStorage.getItem('myCheckins') || '[]');
+        if (data && data[0]) {
+          myCheckins.push(data[0]);
+          localStorage.setItem('myCheckins', JSON.stringify(myCheckins));
         }
         hideModal();
         renderCheckins();
@@ -458,6 +483,8 @@
 
       const now = new Date();
       const cityFilter = document.getElementById('cityFilter').value.toLowerCase();
+      const genderFilter = document.getElementById('genderFilter')?.value || "";
+      const statusFilter = document.getElementById('statusFilter')?.value || "";
       const distanceFilter = parseInt(document.getElementById('distanceFilter').value, 10);
 
       // Ottieni posizione utente (se disponibile)
@@ -491,7 +518,9 @@
           const dist = getDistanceKm(userLat, userLon, c.lat, c.lon);
           matchDistance = dist <= distanceFilter;
         }
-        return diff <= 6 && matchCity && matchDistance;
+        const matchGender = genderFilter ? c.gender === genderFilter : true;
+        const matchStatus = statusFilter ? c.status === statusFilter : true;
+        return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
       }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
       for (const c of filtered) {
@@ -504,11 +533,17 @@
 
         const item = document.createElement("div");
         item.className = "checkin-item";
+        // Like system: salva i like in localStorage per utente
+        let likes = JSON.parse(localStorage.getItem('checkinLikes') || '{}');
+        let likeCount = c.like_count || 0;
+        let liked = likes[c.id] === true;
+
         item.innerHTML = `
           <b>${c.nickname}</b> 
           ${genderLabel ? `<span style=\"background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;\">${genderLabel}</span>` : ""}
           ${statusLabel ? `<span style=\"background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;\">${statusLabel}</span>` : ""}
           : ${c.description} (${c.city || ""})<br>
+          <button class='like-btn' data-id='${c.id}' style='background:${liked ? "#ff3366" : "#e3f7ff"};color:${liked ? "#fff" : "#3366ff"};border:none;border-radius:8px;padding:2px 10px;font-size:14px;margin:4px 0 4px 0;cursor:pointer;'>❤️ ${likeCount + (liked ? 1 : 0)}</button>
           <div class='expiration-timer' id='timer-${c.id}'>Scade tra...</div>
           <div id="comments-${c.id}"></div>
           <div class='comment-input'>
@@ -516,8 +551,21 @@
             <button onclick='addComment(${c.id})'>Invia</button>
           </div>
         `;
-        item.onclick = () => map.setView([c.lat, c.lon], 16);
+        item.onclick = (e) => { if (!e.target.classList.contains('like-btn')) map.setView([c.lat, c.lon], 16); };
         list.appendChild(item);
+
+        // Like button event
+        item.querySelector('.like-btn').onclick = function(ev) {
+          ev.stopPropagation();
+          let likes = JSON.parse(localStorage.getItem('checkinLikes') || '{}');
+          if (likes[c.id]) return; // già messo like
+          likes[c.id] = true;
+          localStorage.setItem('checkinLikes', JSON.stringify(likes));
+          this.style.background = '#ff3366';
+          this.style.color = '#fff';
+          let n = parseInt(this.textContent.replace(/[^0-9]/g, '')) || 0;
+          this.innerHTML = `❤️ ${n+1}`;
+        };
 
         const marker = L.marker([c.lat, c.lon]).addTo(map);
         marker.bindPopup(`<b>${c.nickname}</b> ${genderLabel ? `<span style='background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;'>${genderLabel}</span>` : ""} ${statusLabel ? `<span style='background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;'>${statusLabel}</span>` : ""}<br>${c.description}<br><a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank'>Naviga</a>`);
