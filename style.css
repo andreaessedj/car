@@ -1,0 +1,298 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap');
+body { margin: 0; font-family: 'Rubik', sans-serif; background-color: #f0f2f5; color: #333; }
+#map {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  height: 60vh;
+  width: 100%;
+  z-index: 1;
+  border-radius: 0 0 18px 0;
+  box-shadow: 0 6px 24px rgba(255,51,102,0.08);
+  transition: top 0.3s ease;
+}
+#filters {
+  padding: 12px 24px;
+  background: #fff;
+  border-bottom: 1.5px solid #ffe3e3;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: 260px;
+  box-shadow: 0 2px 12px rgba(255,51,102,0.04);
+}
+#filters input {
+  padding: 10px 12px;
+  border-radius: 7px;
+  border: 1px solid #e0e0e0;
+  font-size: 15px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  outline: none;
+  transition: border 0.2s;
+}
+#modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
+#modalContent { background: #fff; padding: 24px; border-radius: 10px; width: 300px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+.closeBtn { position: absolute; top: 8px; right: 12px; font-size: 20px; cursor: pointer; color: #888; }
+.closeBtn:hover { color: #000; }
+#modalContent input, #modalContent textarea, #modalContent select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  background: #f8f8fa;
+  box-shadow: 0 1px 4px rgba(255,51,102,0.06);
+  transition: border 0.2s;
+}
+#modalContent input:focus, #modalContent textarea:focus, #modalContent select:focus {
+  border: 1.5px solid #ff3366;
+  outline: none;
+}
+#modalContent label {
+  font-size: 15px;
+  color: #ff3366;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+}
+#modalContent .flag-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+#modalContent .flag-group label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 0;
+  margin-right: 4px;
+  display: inline-block;
+}
+#modalContent .flag-group input[type="radio"] {
+  margin-right: 3px;
+}
+#modalContent .flag-group input[type="radio"]:focus {
+  outline: 1.5px solid #ff3366;
+}
+#modalContent button {
+  background: linear-gradient(90deg,#ff3366 60%,#ff7a5c 100%);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255,51,102,0.10);
+  transition: background 0.3s;
+}
+#modalContent button:hover {
+  background: linear-gradient(90deg,#ff7a5c 60%,#ff3366 100%);
+}
+#checkinList {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 32vh;
+  overflow-y: auto;
+  padding: 22px 28px 18px 28px;
+  background: linear-gradient(90deg,#fff 80%,#ffe3e3 100%);
+  border-top: 1.5px solid #ffe3e3;
+  z-index: 2;
+  border-radius: 18px 0 0 0;
+  box-shadow: 0 -6px 24px rgba(255,51,102,0.08);
+  transition: left 0.3s ease, width 0.3s ease;
+}
+.checkin-item {
+  margin-bottom: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px dashed #ff7a5c;
+  cursor: pointer;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(255,51,102,0.04);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.checkin-item:hover {
+  background: #ffe3e3;
+  box-shadow: 0 4px 16px rgba(255,51,102,0.08);
+}
+.comment-input {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+.comment-input input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ff7a5c;
+  font-size: 14px;
+  outline: none;
+  box-shadow: 0 1px 4px rgba(255,51,102,0.04);
+  transition: border 0.2s;
+}
+.comment-input input:focus {
+  border: 1.5px solid #ff3366;
+}
+.comment-input button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(90deg,#ff3366 60%,#ff7a5c 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255,51,102,0.10);
+  transition: background 0.3s;
+}
+.comment-input button:hover {
+  background: linear-gradient(90deg,#ff7a5c 60%,#ff3366 100%);
+}
+.comment {
+  font-size: 14px;
+  margin-top: 6px;
+  padding-left: 12px;
+  color: #444;
+  background: #fff6f6;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(255,51,102,0.04);
+}
+.expiration-timer {
+  font-size: 13px;
+  color: #ff3366;
+  margin-top: 8px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 72px;
+  background: linear-gradient(90deg,#fff 80%,#ffe3e3 100%);
+  box-shadow: 0 2px 18px rgba(255,51,102,0.10);
+  z-index: 1100;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 1.5px solid #ffe3e3;
+  transition: height 0.3s ease;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0 24px;
+  gap: 24px;
+}
+#sidebar img.logo {
+  height: 128px;
+  width: 128px;
+  margin-right: 32px;
+  border-radius: 28px;
+  object-fit: cover;
+  box-shadow: 0 4px 24px rgba(255,51,102,0.15);
+  background: #fff;
+}
+#sidebarContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+#sidebarContent > * {
+  margin: 0 6px 0 0;
+}
+#sidebar h2 {
+  margin: 0 18px 0 0;
+  color: #ff3366;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 1.3em;
+  white-space: nowrap;
+}
+#sidebar button, #sidebar input, #sidebar label {
+  margin-bottom: 0 !important;
+}
+#sidebar input[type="text"], #sidebar input[type="range"] {
+  width: auto;
+  min-width: 160px;
+  max-width: 220px;
+}
+#sidebar .distance-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#sidebar p {
+  margin: 0 0 0 12px;
+  font-size: 13px;
+  color: #888;
+  white-space: nowrap;
+}
+/* Responsive/mobile layout */
+@media (max-width: 700px) {
+  #sidebar {
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+    min-height: 72px;
+    padding: 12px 8px 8px 8px;
+    gap: 10px;
+  }
+  #sidebar img.logo {
+    height: 56px;
+    width: 56px;
+    margin-right: 0;
+    margin-bottom: 8px;
+    border-radius: 14px;
+  }
+  #sidebarContent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+  }
+  #sidebarContent > * {
+    margin: 0 0 6px 0;
+  }
+  #sidebar button, #sidebar input, #sidebar label, #sidebar .distance-group {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 15px;
+  }
+  #sidebar input[type="text"] {
+    font-size: 15px;
+    padding: 10px 8px;
+  }
+  #sidebar input[type="range"] {
+    width: 100%;
+  }
+  #sidebar .distance-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  #sidebar p {
+    margin: 0 0 0 0;
+    font-size: 12px;
+  }
+  #map {
+    top: calc(56px + 24px + 8px + 8px);
+    height: 45vh;
+  }
+  #checkinList {
+    padding: 12px 6px 12px 6px;
+    font-size: 15px;
+  }
+}
