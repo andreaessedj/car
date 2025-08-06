@@ -68,8 +68,36 @@
       #sidebar.open #sidebarContent {
         display: flex !important;
         position: static !important;
+        flex-direction: column !important;
+        align-items: center !important;
         box-shadow: 0 8px 32px rgba(255,51,102,0.18);
         border-bottom: 1.5px solid #ffe3e3;
+        padding-top: 18px !important;
+        padding-bottom: 18px !important;
+        gap: 18px !important;
+      }
+      #sidebar.open img.logo {
+        height: 64px !important;
+        width: 64px !important;
+        display: block !important;
+        margin: 0 auto 18px auto !important;
+      }
+      #sidebar.open #sidebarContent > * {
+        margin: 0 0 0 0 !important;
+        width: 90vw !important;
+        max-width: 400px !important;
+        text-align: center !important;
+      }
+      #sidebar.open #sidebarContent .distance-group {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 6px !important;
+        width: 100% !important;
+      }
+      #sidebar.open #sidebarContent p {
+        font-size: 13px !important;
+        margin-top: 8px !important;
+        margin-bottom: 0 !important;
       }
       #sidebar.open {
         height: auto !important;
