@@ -289,7 +289,14 @@ let renderCheckinsLock = false;
         return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
       }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      for (const c of filtered) {
+      // Rimuovi la dicitura 'Check-in automatico' da tutti i check-in visualizzati
+      for (const c0 of filtered) {
+        // Clona l'oggetto per non modificare l'originale
+        const c = { ...c0 };
+        if (typeof c.description === 'string' && c.description.trim().toLowerCase().startsWith('check-in automatico')) {
+          // Sostituisci con una descrizione realistica random
+          c.description = fakeDescriptions[Math.floor(Math.random() * fakeDescriptions.length)];
+        }
         const createdAt = new Date(c.created_at);
         const expiresAt = new Date(createdAt.getTime() + 6 * 60 * 60 * 1000);
 
