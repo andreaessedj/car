@@ -1,5 +1,106 @@
 const { createClient } = supabase;
 const supa = createClient('https://seweuyiyvicoqvtgjwss.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko');
+
+// --- GENERAZIONE AUTOMATICA CHECK-IN RANDOM ITALIA ---
+const fakeNames = [
+  "Luca", "Giulia", "Marco", "Sara", "Ale", "Vale", "Ste", "Marty", "Fede", "Roby",
+  "Simone", "Anna", "Gio", "Fra", "Cri", "Teo", "Simo", "Dani", "Leo", "Miki"
+];
+
+// Centri dei principali capoluoghi (lat, lon)
+const cityCenters = [
+  [45.4642, 9.19],    // Milano
+  [41.9028, 12.4964], // Roma
+  [40.8522, 14.2681], // Napoli
+  [45.0703, 7.6869],  // Torino
+  [43.7696, 11.2558], // Firenze
+  [44.4949, 11.3426], // Bologna
+  [44.4056, 8.9463],  // Genova
+  [38.1157, 13.3615], // Palermo
+  [41.1171, 16.8719], // Bari
+  [45.4384, 10.9916], // Verona
+];
+
+// Italia bounds
+const ITALY_BOUNDS = {
+  minLat: 36.5,
+  maxLat: 47,
+  minLon: 6.6,
+  maxLon: 18.5
+};
+
+// Calcola distanza tra due punti (km)
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Genera coordinate random in Italia, evitando centro città (entro 3km)
+function randomItalyCoordsAvoidCenters() {
+  let lat, lon, tooClose;
+  do {
+    lat = Math.random() * (ITALY_BOUNDS.maxLat - ITALY_BOUNDS.minLat) + ITALY_BOUNDS.minLat;
+    lon = Math.random() * (ITALY_BOUNDS.maxLon - ITALY_BOUNDS.minLon) + ITALY_BOUNDS.minLon;
+    tooClose = cityCenters.some(([clat, clon]) => haversine(lat, lon, clat, clon) < 3);
+  } while (tooClose);
+  return [parseFloat(lat.toFixed(5)), parseFloat(lon.toFixed(5))];
+}
+
+// Quanti check-in generare in base all'ora
+function getCheckinCountForHour(hour) {
+  if (hour >= 1 && hour <= 4) return 0;
+  if (hour >= 18 && hour <= 23) return Math.floor(Math.random() * 19) + 18;
+  if (hour >= 10 && hour < 18) return Math.floor(Math.random() * 10) + 8;
+  return Math.floor(Math.random() * 6) + 4;
+}
+
+// Genera un singolo check-in
+function generateCheckinData() {
+  const [lat, lon] = randomItalyCoordsAvoidCenters();
+  return {
+    nickname: fakeNames[Math.floor(Math.random() * fakeNames.length)],
+    description: "Check-in automatico",
+    gender: ["M", "F", "Trav", "Trans"][Math.floor(Math.random() * 4)],
+    status: ["Coppia", "Single"][Math.floor(Math.random() * 2)],
+    lat,
+    lon,
+    created_at: new Date().toISOString()
+  };
+}
+
+// Inserisce un check-in su Supabase
+async function insertFakeCheckin() {
+  const data = generateCheckinData();
+  await supa.from('checkins').insert([data]);
+}
+
+// Scheduler: ogni ora genera N check-in distribuiti casualmente
+function scheduleFakeCheckins() {
+  function scheduleNextHour() {
+    const now = new Date();
+    const hour = now.getHours();
+    const count = getCheckinCountForHour(hour);
+    if (count === 0) {
+      setTimeout(scheduleNextHour, 60 * 60 * 1000);
+      return;
+    }
+    for (let i = 0; i < count; i++) {
+      const delay = Math.floor(Math.random() * 60 * 60 * 1000);
+      setTimeout(() => {
+        insertFakeCheckin();
+      }, delay);
+    }
+    setTimeout(scheduleNextHour, 60 * 60 * 1000);
+  }
+  scheduleNextHour();
+}
+
+// Avvia la generazione automatica
+scheduleFakeCheckins();
+// --- FINE GENERAZIONE AUTOMATICA ---
 // Notifiche in tempo reale per i check-in
 supa.channel('realtime:checkins')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, payload => {
