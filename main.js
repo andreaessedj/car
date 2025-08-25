@@ -40,20 +40,28 @@ function haversine(lat1, lon1, lat2, lon2) {
 
 // Genera coordinate random in Italia, evitando centro città (entro 3km) e solo su terraferma
 async function randomItalyCoordsAvoidCenters() {
-  let lat, lon, tooClose, isLand = false;
-  while (!isLand) {
+  let lat, lon, tooClose, isValid = false;
+  while (!isValid) {
     do {
       lat = Math.random() * (ITALY_BOUNDS.maxLat - ITALY_BOUNDS.minLat) + ITALY_BOUNDS.minLat;
       lon = Math.random() * (ITALY_BOUNDS.maxLon - ITALY_BOUNDS.minLon) + ITALY_BOUNDS.minLon;
       tooClose = cityCenters.some(([clat, clon]) => haversine(lat, lon, clat, clon) < 3);
     } while (tooClose);
-    // Verifica se è terraferma usando Nominatim
+    // Verifica se è terraferma e in Italia usando Nominatim
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
       const res = await fetch(url);
       const data = await res.json();
-      if (data && data.address && !data.address.ocean && !data.address.sea && !data.address.water) {
-        isLand = true;
+      // Deve essere Italia e non acqua
+      if (
+        data &&
+        data.address &&
+        data.address.country_code === 'it' &&
+        !data.address.ocean &&
+        !data.address.sea &&
+        !data.address.water
+      ) {
+        isValid = true;
       }
     } catch {}
   }
