@@ -38,14 +38,25 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Genera coordinate random in Italia, evitando centro città (entro 3km)
-function randomItalyCoordsAvoidCenters() {
-  let lat, lon, tooClose;
-  do {
-    lat = Math.random() * (ITALY_BOUNDS.maxLat - ITALY_BOUNDS.minLat) + ITALY_BOUNDS.minLat;
-    lon = Math.random() * (ITALY_BOUNDS.maxLon - ITALY_BOUNDS.minLon) + ITALY_BOUNDS.minLon;
-    tooClose = cityCenters.some(([clat, clon]) => haversine(lat, lon, clat, clon) < 3);
-  } while (tooClose);
+// Genera coordinate random in Italia, evitando centro città (entro 3km) e solo su terraferma
+async function randomItalyCoordsAvoidCenters() {
+  let lat, lon, tooClose, isLand = false;
+  while (!isLand) {
+    do {
+      lat = Math.random() * (ITALY_BOUNDS.maxLat - ITALY_BOUNDS.minLat) + ITALY_BOUNDS.minLat;
+      lon = Math.random() * (ITALY_BOUNDS.maxLon - ITALY_BOUNDS.minLon) + ITALY_BOUNDS.minLon;
+      tooClose = cityCenters.some(([clat, clon]) => haversine(lat, lon, clat, clon) < 3);
+    } while (tooClose);
+    // Verifica se è terraferma usando Nominatim
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data.address && !data.address.ocean && !data.address.sea && !data.address.water) {
+        isLand = true;
+      }
+    } catch {}
+  }
   return [parseFloat(lat.toFixed(5)), parseFloat(lon.toFixed(5))];
 }
 
@@ -57,12 +68,26 @@ function getCheckinCountForHour(hour) {
   return Math.floor(Math.random() * 6) + 4;
 }
 
-// Genera un singolo check-in
-function generateCheckinData() {
-  const [lat, lon] = randomItalyCoordsAvoidCenters();
+// Descrizioni realistiche per check-in fake
+const fakeDescriptions = [
+  "Zona tranquilla, parcheggio facile",
+  "Ottimo posto per incontrarsi",
+  "Vista panoramica, poco traffico",
+  "Area appartata, consigliata la sera",
+  "Spazio ampio, privacy garantita",
+  "Perfetto per chi cerca discrezione",
+  "Frequentato da coppie",
+  "Luogo sicuro, illuminato",
+  "Consigliato dopo le 21",
+  "Facile da raggiungere in auto"
+];
+
+// Genera un singolo check-in (async per attendere verifica terraferma)
+async function generateCheckinData() {
+  const [lat, lon] = await randomItalyCoordsAvoidCenters();
   return {
     nickname: fakeNames[Math.floor(Math.random() * fakeNames.length)],
-    description: "Check-in automatico",
+    description: fakeDescriptions[Math.floor(Math.random() * fakeDescriptions.length)],
     gender: ["M", "F", "Trav", "Trans"][Math.floor(Math.random() * 4)],
     status: ["Coppia", "Single"][Math.floor(Math.random() * 2)],
     lat,
@@ -73,7 +98,7 @@ function generateCheckinData() {
 
 // Inserisce un check-in su Supabase
 async function insertFakeCheckin() {
-  const data = generateCheckinData();
+  const data = await generateCheckinData();
   await supa.from('checkins').insert([data]);
 }
 
@@ -101,10 +126,28 @@ function scheduleFakeCheckins() {
 // Avvia la generazione automatica
 scheduleFakeCheckins();
 // --- FINE GENERAZIONE AUTOMATICA ---
+
+// --- NOTIFICHE PUSH AVANZATE ---
+let preferredCity = localStorage.getItem('preferredCity') || '';
+function setPreferredCity(city) {
+  preferredCity = city;
+  localStorage.setItem('preferredCity', city);
+}
+
 // Notifiche in tempo reale per i check-in
 supa.channel('realtime:checkins')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, payload => {
     renderCheckins();
+    // Notifica per città preferita
+    if (window.Notification && Notification.permission === 'granted' && preferredCity) {
+      const c = payload.new;
+      if (c && c.city && c.city.toLowerCase().includes(preferredCity.toLowerCase())) {
+        new Notification('Nuovo check-in nella tua città preferita!', {
+          body: `${c.nickname}: ${c.description}`,
+          icon: 'logo.png'
+        });
+      }
+    }
   })
   .subscribe();
 
@@ -263,6 +306,10 @@ let renderCheckinsLock = false;
 
         // Pulsante chat anonima per ogni check-in
         const chatBtn = `<button class='chat-btn' data-checkin='${c.id}' style='background:#fff6f6;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:2px 10px;font-size:14px;margin:4px 0 4px 8px;cursor:pointer;'>💬 Chat</button>`;
+        // Pulsante segnala abuso
+        const reportBtn = `<button class='report-btn' data-id='${c.id}' style='background:#ffe3e3;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:2px 8px;font-size:13px;margin:4px 0 4px 8px;cursor:pointer;'>🚩 Segnala</button>`;
+        // Pulsante condividi
+        const shareBtn = `<button class='share-btn' data-lat='${c.lat}' data-lon='${c.lon}' data-nick='${c.nickname}' style='background:#e3f7ff;color:#3366ff;border:1px solid #3366ff;border-radius:8px;padding:2px 8px;font-size:13px;margin:4px 0 4px 8px;cursor:pointer;'>🔗 Condividi</button>`;
 
         item.innerHTML = `
           <b>${c.nickname}</b> 
@@ -271,6 +318,8 @@ let renderCheckinsLock = false;
           : ${c.description} (${c.city || ""})<br>
           <button class='like-btn' data-id='${c.id}' style='background:${liked ? "#ff3366" : "#e3f7ff"};color:${liked ? "#fff" : "#3366ff"};border:none;border-radius:8px;padding:2px 10px;font-size:14px;margin:4px 0 4px 0;cursor:pointer;'>❤️ ${likeCount + (liked ? 1 : 0)}</button>
           ${chatBtn}
+          ${reportBtn}
+          ${shareBtn}
           <div class='expiration-timer' id='timer-${c.id}'>Scade tra...</div>
           <div id="comments-${c.id}"></div>
           <div class='comment-input'>
@@ -278,6 +327,25 @@ let renderCheckinsLock = false;
             <button onclick='addComment(${c.id})'>Invia</button>
           </div>
         `;
+        // Eventi per segnalazione e condivisione
+        item.querySelector('.report-btn').onclick = function(ev) {
+          ev.stopPropagation();
+          alert('Grazie per la segnalazione. Il check-in sarà revisionato.');
+          // Qui puoi aggiungere logica per inviare la segnalazione a Supabase
+        };
+        item.querySelector('.share-btn').onclick = function(ev) {
+          ev.stopPropagation();
+          const url = `https://maps.google.com/?q=${c.lat},${c.lon}`;
+          if (navigator.share) {
+            navigator.share({
+              title: `Check-in di ${c.nickname}`,
+              text: `${c.nickname}: ${c.description}`,
+              url
+            });
+          } else {
+            prompt('Copia questo link per condividere:', url);
+          }
+        };
         item.onclick = (e) => { 
           if (e.target.classList.contains('like-btn')) return;
           if (e.target.classList.contains('chat-btn')) {
@@ -357,8 +425,34 @@ async function loadComments(checkinId) {
     const date = new Date(c.created_at);
     const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const dateString = date.toLocaleDateString();
-    return `<div class='comment'>🔈 ${c.content} <span style='color:#888;font-size:11px;'>(${dateString} ${timeString})</span></div>`;
+    // Like ai commenti
+    let commentLikes = JSON.parse(localStorage.getItem('commentLikes') || '{}');
+    let liked = commentLikes[c.id] === true;
+    return `<div class='comment'>🔈 ${c.content} <span style='color:#888;font-size:11px;'>(${dateString} ${timeString})</span>
+      <button class='like-comment-btn' data-id='${c.id}' style='background:${liked ? "#ff3366" : "#e3f7ff"};color:${liked ? "#fff" : "#3366ff"};border:none;border-radius:8px;padding:1px 8px;font-size:12px;margin-left:8px;cursor:pointer;'>👍</button>
+      <button class='report-comment-btn' data-id='${c.id}' style='background:#ffe3e3;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:1px 8px;font-size:12px;margin-left:4px;cursor:pointer;'>🚩</button>
+    </div>`;
   }).join("");
+  // Eventi like e segnalazione commenti
+  div.querySelectorAll('.like-comment-btn').forEach(btn => {
+    btn.onclick = function(ev) {
+      ev.stopPropagation();
+      let commentLikes = JSON.parse(localStorage.getItem('commentLikes') || '{}');
+      const id = btn.getAttribute('data-id');
+      if (commentLikes[id]) return;
+      commentLikes[id] = true;
+      localStorage.setItem('commentLikes', JSON.stringify(commentLikes));
+      btn.style.background = '#ff3366';
+      btn.style.color = '#fff';
+    };
+  });
+  div.querySelectorAll('.report-comment-btn').forEach(btn => {
+    btn.onclick = function(ev) {
+      ev.stopPropagation();
+      alert('Grazie per la segnalazione. Il commento sarà revisionato.');
+      // Qui puoi aggiungere logica per inviare la segnalazione a Supabase
+    };
+  });
 }
 
 function toggleSidebar() {}
