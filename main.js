@@ -263,6 +263,36 @@ function getCityFromCoords(lat, lon) {
 }
 
 let renderCheckinsLock = false;
+    // Avvio: chiama sempre renderCheckins almeno una volta, anche se la geolocalizzazione fallisce
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude, longitude } = pos.coords;
+      map.setView([latitude, longitude], 15);
+      renderCheckins().catch(e => {
+        console.error('Errore in renderCheckins:', e);
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      });
+    },
+    () => {
+      renderCheckins().catch(e => {
+        console.error('Errore in renderCheckins:', e);
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      });
+    },
+    { enableHighAccuracy: true, timeout: 3000, maximumAge: 0 }
+  );
+} else {
+  renderCheckins().catch(e => {
+    console.error('Errore in renderCheckins:', e);
+    const loader = document.getElementById('loader');
+    if (loader) loader.style.display = 'none';
+  });
+}
+
+// All'inizio di renderCheckins, logga i dati ricevuti
     async function renderCheckins() {
       if (renderCheckinsLock) return;
       renderCheckinsLock = true;
@@ -278,13 +308,19 @@ let renderCheckinsLock = false;
       expirationTimers.forEach(clearInterval);
       expirationTimers = [];
 
-      const { data, error } = await supa.from('checkins').select('*');
-      if (error) {
+      let data, error;
+      try {
+        const res = await supa.from('checkins').select('*');
+        data = res.data;
+        error = res.error;
+        console.log('Check-in caricati:', data);
+        if (error) throw error;
+      } catch (e) {
         renderCheckinsLock = false;
-        // Nascondi loader anche in caso di errore
         const loader = document.getElementById('loader');
         if (loader) loader.style.display = 'none';
-        return alert("Errore nel caricamento dei check-in");
+        alert("Errore nel caricamento dei check-in: " + (e.message || e));
+        return;
       }
 
       const now = new Date();
@@ -446,7 +482,6 @@ let renderCheckinsLock = false;
           if (diff <= 0) {
             timerElement.textContent = "Scaduto";
             clearInterval(interval);
-            renderCheckins();
           } else {
             const h = Math.floor(diff / 3600);
             const m = Math.floor((diff % 3600) / 60);
@@ -457,7 +492,7 @@ let renderCheckinsLock = false;
         expirationTimers.push(interval);
       }
       renderCheckinsLock = false;
-      // Nascondi loader dopo il caricamento
+      // Nascondi loader anche in caso di errore
       const loader = document.getElementById('loader');
       if (loader) loader.style.display = 'none';
       // Aggiorna layout sidebar/mappa su mobile usando la funzione globale di index.html
