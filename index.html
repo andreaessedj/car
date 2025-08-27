@@ -5,7 +5,7 @@
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CarSex Map</title>
+  <title>Adult-Meet</title>
 
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -14,11 +14,27 @@
 </head>
 
 <body>
+  <button id="enableNotifications" style="position:fixed;top:10px;right:10px;z-index:4000;background:#fff6f6;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:6px 18px;font-size:16px;font-weight:600;cursor:pointer;">Abilita notifiche</button>
   <script>
-    // Richiesta permesso notifiche push all'avvio
-    if (window.Notification && Notification.permission !== 'granted') {
-      Notification.requestPermission();
-    }
+    // Richiesta permesso notifiche push SOLO su click utente
+    document.addEventListener('DOMContentLoaded', function() {
+      var btn = document.getElementById('enableNotifications');
+      if (btn) {
+        btn.onclick = function() {
+          if (window.Notification && Notification.permission !== 'granted') {
+            Notification.requestPermission().then(function(permission) {
+              if (permission === 'granted') btn.style.display = 'none';
+            });
+          } else {
+            btn.style.display = 'none';
+          }
+        };
+        // Nascondi il pulsante se già concesso
+        if (window.Notification && Notification.permission === 'granted') {
+          btn.style.display = 'none';
+        }
+      }
+    });
   </script>
   <div id="loader" style="position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:#fff;z-index:3000;">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">

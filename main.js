@@ -96,23 +96,20 @@ const fakeDescriptions = [
   "Luogo silenzioso, lontano dal traffico",
   "Perfetto per incontri riservati",
   "Parcheggio sempre disponibile",
-  "Zona residenziale tranquilla",
   "Spazio nascosto tra gli alberi",
   "Area ben curata e pulita",
   "Facile accesso dalla tangenziale",
   "Luogo discreto vicino al centro",
   "Ottimo per chi ama la natura",
   "Panchine disponibili, zona ombreggiata",
-  "Area videosorvegliata, molto sicura",
   "Perfetto per una pausa serale",
   "Zona poco illuminata, massima privacy",
   "Luogo frequentato da persone educate",
-  "Area con vista sul fiume",
   "Spazio ampio per gruppi",
   "Zona con molti alberi, fresca d'estate",
   "Luogo appartato vicino al parcheggio",
-  "Area facilmente raggiungibile in bici",
-  "Ottimo punto di ritrovo per amici",
+  "Area facilmente raggiungibile",
+  "Ottimo punto di ritrovo",
   "Zona tranquilla anche nei weekend",
   "Luogo ideale per chi cerca relax",
   "Area con fontanella d'acqua",
@@ -152,8 +149,13 @@ function scheduleFakeCheckins() {
     }
     for (let i = 0; i < count; i++) {
       const delay = Math.floor(Math.random() * 60 * 60 * 1000);
-      setTimeout(() => {
-        insertFakeCheckin();
+      setTimeout(async () => {
+        try {
+          await insertFakeCheckin();
+        } catch (e) {
+          // Puoi loggare l'errore se vuoi
+          // console.error('Errore check-in automatico:', e);
+        }
       }, delay);
     }
     setTimeout(scheduleNextHour, 60 * 60 * 1000);
