@@ -441,24 +441,6 @@ if (navigator.geolocation) {
           map.setView([c.lat, c.lon], 16); 
         };
         list.appendChild(item);
-      }
-      console.log("Check-in DOM creati:", list.children.length); // DEBUG
-      // Notifica push locale per nuovi check-in vicini
-      if (window.Notification && Notification.permission === 'granted' && filtered.length > 0) {
-        const lastCheckin = filtered[0];
-        const notifiedIds = JSON.parse(localStorage.getItem('notifiedCheckins') || '[]');
-        if (notifiedIds.indexOf(lastCheckin.id) === -1) {
-          // Solo se il check-in è entro 10km dall'utente
-          if (userLat && userLon && getDistanceKm(userLat, userLon, lastCheckin.lat, lastCheckin.lon) <= 10) {
-            new Notification('Nuovo check-in vicino!', {
-              body: `${lastCheckin.nickname}: ${lastCheckin.description}`,
-              icon: 'logo.png'
-            });
-            notifiedIds.push(lastCheckin.id);
-            localStorage.setItem('notifiedCheckins', JSON.stringify(notifiedIds));
-          }
-        }
-      }
 
         // Like button event
         item.querySelector('.like-btn').onclick = function(ev) {
@@ -495,13 +477,30 @@ if (navigator.geolocation) {
         }, 1000);
         expirationTimers.push(interval);
       }
+      console.log("Check-in DOM creati:", list.children.length); // DEBUG
+      // Notifica push locale per nuovi check-in vicini
+      if (window.Notification && Notification.permission === 'granted' && filtered.length > 0) {
+        const lastCheckin = filtered[0];
+        const notifiedIds = JSON.parse(localStorage.getItem('notifiedCheckins') || '[]');
+        if (notifiedIds.indexOf(lastCheckin.id) === -1) {
+          // Solo se il check-in è entro 10km dall'utente
+          if (userLat && userLon && getDistanceKm(userLat, userLon, lastCheckin.lat, lastCheckin.lon) <= 10) {
+            new Notification('Nuovo check-in vicino!', {
+              body: `${lastCheckin.nickname}: ${lastCheckin.description}`,
+              icon: 'logo.png'
+            });
+            notifiedIds.push(lastCheckin.id);
+            localStorage.setItem('notifiedCheckins', JSON.stringify(notifiedIds));
+          }
+        }
+      }
       renderCheckinsLock = false;
       // Nascondi loader anche in caso di errore
       const loader = document.getElementById('loader');
       if (loader) loader.style.display = 'none';
       // Aggiorna layout sidebar/mappa su mobile usando la funzione globale di index.html
       if (typeof updateSidebar === "function") updateSidebar();
-    
+    }
 
 // Funzione per caricare i commenti (deve essere fuori da renderCheckins)
 async function loadComments(checkinId) {
