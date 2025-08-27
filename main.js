@@ -460,12 +460,13 @@ let renderCheckinsLock = false;
       // Nascondi loader dopo il caricamento
       const loader = document.getElementById('loader');
       if (loader) loader.style.display = 'none';
+      // Aggiorna layout sidebar/mappa su mobile
+      if (typeof updateSidebar === "function") updateSidebar();
     }
 
 // Funzione per caricare i commenti (deve essere fuori da renderCheckins)
 async function loadComments(checkinId) {
   const div = document.getElementById(`comments-${checkinId}`);
-// ...existing code...
   const { data, error } = await supa.from('comments').select('*').eq('checkin_id', checkinId).order('created_at', { ascending: false });
   if (error) return;
   div.innerHTML = data.map(c => {
@@ -502,7 +503,27 @@ async function loadComments(checkinId) {
   });
 }
 
-function toggleSidebar() {}
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('expanded');
+    updateSidebar();
+  }
+}
+
+// Funzione globale per aggiornare il layout della sidebar e della mappa su mobile
+function updateSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const content = document.getElementById('content');
+  const map = document.getElementById('map');
+  if (sidebar && content && map) {
+    if (sidebar.classList.contains('expanded')) {
+      map.style.marginTop = content.offsetHeight + 'px';
+    } else {
+      map.style.marginTop = '0px';
+    }
+  }
+}
 
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
