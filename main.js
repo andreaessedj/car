@@ -36,7 +36,6 @@ function haversine(lat1, lon1, lat2, lon2) {
   const dLon = (lon2-lon1)*Math.PI/180;
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
 
 // Genera coordinate random in Italia, evitando centro città (entro 3km) e solo su terraferma
 async function randomItalyCoordsAvoidCenters() {
@@ -370,6 +369,7 @@ if (navigator.geolocation) {
       for (const c0 of filtered) {
         // Clona l'oggetto per non modificare l'originale
         const c = { ...c0 };
+        console.log("Rendering check-in:", c); // DEBUG
         if (typeof c.description === 'string' && c.description.trim().toLowerCase().startsWith('check-in automatico')) {
           // Sostituisci con una descrizione realistica random
           c.description = fakeDescriptions[Math.floor(Math.random() * fakeDescriptions.length)];
@@ -440,6 +440,8 @@ if (navigator.geolocation) {
           map.setView([c.lat, c.lon], 16); 
         };
         list.appendChild(item);
+      }
+      console.log("Check-in DOM creati:", list.children.length); // DEBUG
       // Notifica push locale per nuovi check-in vicini
       if (window.Notification && Notification.permission === 'granted' && filtered.length > 0) {
         const lastCheckin = filtered[0];
