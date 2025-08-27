@@ -351,8 +351,8 @@ if (navigator.geolocation) {
         return R * c;
       }
 
-      // Se la posizione utente non è disponibile, NON filtrare per distanza
-      const filtered = data.filter(c => {
+  // Se la posizione utente non è disponibile, NON filtrare per distanza
+  const filtered = data.filter(c => {
         const created = new Date(c.created_at);
         const diff = (now - created) / 1000 / 3600;
         const matchCity = (c.city || "").toLowerCase().includes(cityFilter);
@@ -366,8 +366,9 @@ if (navigator.geolocation) {
         return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
       }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      // Rimuovi la dicitura 'Check-in automatico' da tutti i check-in visualizzati
-      for (const c0 of filtered) {
+  // Rimuovi la dicitura 'Check-in automatico' da tutti i check-in visualizzati
+  console.log('filtered count:', filtered.length);
+  for (const c0 of filtered) {
         try {
           // Clona l'oggetto per non modificare l'originale
           const c = { ...c0 };
@@ -441,7 +442,13 @@ if (navigator.geolocation) {
           }
           map.setView([c.lat, c.lon], 16); 
         };
-        list.appendChild(item);
+  // Ensure item visible even if external CSS hides it
+  item.style.display = item.style.display || 'block';
+  item.style.background = item.style.background || '#fff';
+  item.style.color = item.style.color || '#111';
+  item.style.padding = item.style.padding || '14px 18px';
+  console.log('Appending checkin id:', c.id, 'nick:', c.nickname);
+  list.appendChild(item);
 
         // Like button event
         item.querySelector('.like-btn').onclick = function(ev) {
