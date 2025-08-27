@@ -368,8 +368,9 @@ if (navigator.geolocation) {
 
       // Rimuovi la dicitura 'Check-in automatico' da tutti i check-in visualizzati
       for (const c0 of filtered) {
-        // Clona l'oggetto per non modificare l'originale
-        const c = { ...c0 };
+        try {
+          // Clona l'oggetto per non modificare l'originale
+          const c = { ...c0 };
         console.log("Rendering check-in:", c); // DEBUG
         if (typeof c.description === 'string' && c.description.trim().toLowerCase().startsWith('check-in automatico')) {
           // Sostituisci con una descrizione realistica random
@@ -476,8 +477,28 @@ if (navigator.geolocation) {
           }
         }, 1000);
         expirationTimers.push(interval);
+        } catch (itemErr) {
+          console.error('Errore rendering singolo check-in, salto:', itemErr, c0 && c0.id);
+          continue;
+        }
       }
       console.log("Check-in DOM creati:", list.children.length); // DEBUG
+      try {
+        // Force visibility and bring to front in case CSS rules hide/overlay it in some browsers
+        list.style.display = 'block';
+        list.style.position = 'fixed';
+        list.style.left = list.style.left || '0';
+        list.style.right = list.style.right || '0';
+        list.style.bottom = list.style.bottom || '0';
+        list.style.zIndex = '99999';
+        list.style.background = list.style.background || '#fff';
+        list.style.border = list.style.border || '2px solid rgba(255,0,0,0.6)';
+        // Log bounding box to help debug mobile/Chrome layout
+        const rect = list.getBoundingClientRect();
+        console.log('checkinList rect:', rect.top, rect.left, rect.width, rect.height);
+      } catch (e) {
+        console.warn('Errore nel forzare visibilità checkinList:', e);
+      }
       // Notifica push locale per nuovi check-in vicini
       if (window.Notification && Notification.permission === 'granted' && filtered.length > 0) {
         const lastCheckin = filtered[0];

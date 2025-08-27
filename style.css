@@ -94,17 +94,17 @@ body { margin: 0; font-family: 'Rubik', sans-serif; background-color: #f0f2f5; c
   background: linear-gradient(90deg,#ff7a5c 60%,#ff3366 100%);
 }
 #checkinList {
-  position: fixed;
-  left: 0;
+  position: absolute;
   right: 0;
   bottom: 0;
+  left: 0;
   height: 32vh;
-  z-index: 9999;
-  background: #fff !important;
-  border: 3px solid red !important;
   overflow-y: auto;
   padding: 22px 28px 18px 28px;
-  border-radius: 18px 18px 0 0;
+  background: linear-gradient(90deg,#fff 80%,#ffe3e3 100%);
+  border-top: 1.5px solid #ffe3e3;
+  z-index: 2;
+  border-radius: 18px 0 0 0;
   box-shadow: 0 -6px 24px rgba(255,51,102,0.08);
   transition: left 0.3s ease, width 0.3s ease;
 }
