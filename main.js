@@ -351,6 +351,7 @@ if (navigator.geolocation) {
         return R * c;
       }
 
+      // Se la posizione utente non è disponibile, NON filtrare per distanza
       const filtered = data.filter(c => {
         const created = new Date(c.created_at);
         const diff = (now - created) / 1000 / 3600;
@@ -359,7 +360,7 @@ if (navigator.geolocation) {
         if (userLat != null && userLon != null) {
           const dist = getDistanceKm(userLat, userLon, c.lat, c.lon);
           matchDistance = dist <= distanceFilter;
-        }
+        } // altrimenti matchDistance resta true
         const matchGender = genderFilter ? c.gender === genderFilter : true;
         const matchStatus = statusFilter ? c.status === statusFilter : true;
         return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
