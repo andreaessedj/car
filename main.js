@@ -36,6 +36,7 @@ function haversine(lat1, lon1, lat2, lon2) {
   const dLon = (lon2-lon1)*Math.PI/180;
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
 
 // Genera coordinate random in Italia, evitando centro città (entro 3km) e solo su terraferma
 async function randomItalyCoordsAvoidCenters() {
@@ -500,7 +501,7 @@ if (navigator.geolocation) {
       if (loader) loader.style.display = 'none';
       // Aggiorna layout sidebar/mappa su mobile usando la funzione globale di index.html
       if (typeof updateSidebar === "function") updateSidebar();
-    }
+    
 
 // Funzione per caricare i commenti (deve essere fuori da renderCheckins)
 async function loadComments(checkinId) {
