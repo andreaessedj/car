@@ -460,7 +460,7 @@ let renderCheckinsLock = false;
       // Nascondi loader dopo il caricamento
       const loader = document.getElementById('loader');
       if (loader) loader.style.display = 'none';
-      // Aggiorna layout sidebar/mappa su mobile
+      // Aggiorna layout sidebar/mappa su mobile usando la funzione globale di index.html
       if (typeof updateSidebar === "function") updateSidebar();
     }
 
@@ -501,40 +501,4 @@ async function loadComments(checkinId) {
       // Qui puoi aggiungere logica per inviare la segnalazione a Supabase
     };
   });
-}
-
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  if (sidebar) {
-    sidebar.classList.toggle('expanded');
-    updateSidebar();
-  }
-}
-
-// Funzione globale per aggiornare il layout della sidebar e della mappa su mobile
-function updateSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const content = document.getElementById('content');
-  const map = document.getElementById('map');
-  if (sidebar && content && map) {
-    if (sidebar.classList.contains('expanded')) {
-      map.style.marginTop = content.offsetHeight + 'px';
-    } else {
-      map.style.marginTop = '0px';
-    }
-  }
-}
-
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const { latitude, longitude } = pos.coords;
-      map.setView([latitude, longitude], 15);
-      renderCheckins();
-    },
-    () => { renderCheckins(); },
-    { enableHighAccuracy: true, timeout: 3000, maximumAge: 0 }
-  );
-} else {
-  renderCheckins();
 }

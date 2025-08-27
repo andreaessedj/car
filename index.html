@@ -249,6 +249,17 @@
   <script src="main.js"></script>
   <script src="chat.js"></script>
   <script>
+    // Sidebar mobile: apri di default su mobile all'avvio
+    document.addEventListener('DOMContentLoaded', function() {
+      var sidebar = document.getElementById('sidebar');
+      function isMobile() { return window.innerWidth <= 700; }
+      if (sidebar && isMobile() && !sidebar.classList.contains('open')) {
+        sidebar.classList.add('open');
+        if (typeof updateSidebar === 'function') updateSidebar();
+      }
+    });
+  </script>
+  <script>
     // Sidebar collassabile mobile
     document.addEventListener('DOMContentLoaded', function() {
       var sidebar = document.getElementById('sidebar');
