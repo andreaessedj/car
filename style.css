@@ -292,7 +292,17 @@ body { margin: 0; font-family: 'Rubik', sans-serif; background-color: #f0f2f5; c
     height: 45vh;
   }
   #checkinList {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 32vh;
+    z-index: 1200;
+    background: #fff;
     padding: 12px 6px 12px 6px;
     font-size: 15px;
+    overflow-y: auto;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -6px 24px rgba(255,51,102,0.08);
   }
 }
