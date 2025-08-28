@@ -139,28 +139,63 @@ async function insertFakeCheckin() {
 
 // Scheduler: ogni ora genera N check-in distribuiti casualmente
 function scheduleFakeCheckins() {
-  function scheduleNextHour() {
-    const now = new Date();
-    const hour = now.getHours();
+  // Recupera l'ultimo timestamp di generazione check-in
+  const lastCheckinKey = 'lastFakeCheckinTime';
+  const now = new Date();
+  let last = localStorage.getItem(lastCheckinKey);
+  let lastDate = last ? new Date(last) : null;
+  // Se non c'è mai stato, parti da ora - 48h (max recupero)
+  if (!lastDate || isNaN(lastDate.getTime())) {
+    lastDate = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+  }
+  // Genera check-in per ogni ora mancante
+  let catchup = [];
+  let temp = new Date(lastDate);
+  temp.setMinutes(0,0,0);
+  while (temp < now) {
+    const hour = temp.getHours();
     const count = getCheckinCountForHour(hour);
-    if (count === 0) {
-      setTimeout(scheduleNextHour, 60 * 60 * 1000);
-      return;
+    if (count > 0) {
+      catchup.push({date: new Date(temp), count});
     }
-    for (let i = 0; i < count; i++) {
-      const delay = Math.floor(Math.random() * 60 * 60 * 1000);
-      setTimeout(async () => {
+    temp.setHours(temp.getHours() + 1);
+  }
+  async function doCatchup() {
+    for (const item of catchup) {
+      for (let i = 0; i < item.count; i++) {
         try {
           await insertFakeCheckin();
         } catch (e) {
-          // Puoi loggare l'errore se vuoi
-          // console.error('Errore check-in automatico:', e);
+          // console.error('Errore check-in catchup:', e);
         }
-      }, delay);
+      }
     }
-    setTimeout(scheduleNextHour, 60 * 60 * 1000);
+    // Aggiorna il timestamp
+    localStorage.setItem(lastCheckinKey, now.toISOString());
+    startHourlyScheduler();
   }
-  scheduleNextHour();
+  function startHourlyScheduler() {
+    async function scheduleNextHour() {
+      const now = new Date();
+      const hour = now.getHours();
+      const count = getCheckinCountForHour(hour);
+      if (count > 0) {
+        for (let i = 0; i < count; i++) {
+          const delay = Math.floor(Math.random() * 60 * 60 * 1000);
+          setTimeout(async () => {
+            try {
+              await insertFakeCheckin();
+            } catch (e) {}
+          }, delay);
+        }
+      }
+      // Aggiorna il timestamp ogni ora
+      localStorage.setItem(lastCheckinKey, now.toISOString());
+      setTimeout(scheduleNextHour, 60 * 60 * 1000);
+    }
+    scheduleNextHour();
+  }
+  doCatchup();
 }
 
 // Avvia la generazione automatica
@@ -353,18 +388,30 @@ if (navigator.geolocation) {
 
   // Se la posizione utente non è disponibile, NON filtrare per distanza
   const filtered = data.filter(c => {
-        const created = new Date(c.created_at);
-        const diff = (now - created) / 1000 / 3600;
-        const matchCity = (c.city || "").toLowerCase().includes(cityFilter);
-        let matchDistance = true;
-        if (userLat != null && userLon != null) {
-          const dist = getDistanceKm(userLat, userLon, c.lat, c.lon);
-          matchDistance = dist <= distanceFilter;
-        } // altrimenti matchDistance resta true
-        const matchGender = genderFilter ? c.gender === genderFilter : true;
-        const matchStatus = statusFilter ? c.status === statusFilter : true;
-        return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
-      }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const created = new Date(c.created_at);
+    const diff = (now - created) / 1000 / 3600;
+    const cityValue = (c.city || "").toLowerCase();
+    const matchCity = cityFilter === "" ? true : cityValue.includes(cityFilter);
+    let matchDistance = true;
+    if (userLat != null && userLon != null) {
+      const dist = getDistanceKm(userLat, userLon, c.lat, c.lon);
+      matchDistance = dist <= distanceFilter;
+    }
+    const matchGender = genderFilter ? c.gender === genderFilter : true;
+    const matchStatus = statusFilter ? c.status === statusFilter : true;
+    console.log('Filtro:', {
+      id: c.id,
+      created_at: c.created_at,
+      diff,
+      city: c.city,
+      cityFilter,
+      matchCity,
+      matchDistance,
+      matchGender,
+      matchStatus
+    });
+  return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
+  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   // Rimuovi la dicitura 'Check-in automatico' da tutti i check-in visualizzati
   console.log('filtered count:', filtered.length);
@@ -490,22 +537,9 @@ if (navigator.geolocation) {
         }
       }
       console.log("Check-in DOM creati:", list.children.length); // DEBUG
-      try {
-        // Force visibility and bring to front in case CSS rules hide/overlay it in some browsers
-        list.style.display = 'block';
-        list.style.position = 'fixed';
-        list.style.left = list.style.left || '0';
-        list.style.right = list.style.right || '0';
-        list.style.bottom = list.style.bottom || '0';
-        list.style.zIndex = '99999';
-        list.style.background = list.style.background || '#fff';
-        list.style.border = list.style.border || '2px solid rgba(255,0,0,0.6)';
-        // Log bounding box to help debug mobile/Chrome layout
-        const rect = list.getBoundingClientRect();
-        console.log('checkinList rect:', rect.top, rect.left, rect.width, rect.height);
-      } catch (e) {
-        console.warn('Errore nel forzare visibilità checkinList:', e);
-      }
+  // Log bounding box per debug
+  const rect = list.getBoundingClientRect();
+  console.log('checkinList rect:', rect.top, rect.left, rect.width, rect.height);
       // Notifica push locale per nuovi check-in vicini
       if (window.Notification && Notification.permission === 'granted' && filtered.length > 0) {
         const lastCheckin = filtered[0];
