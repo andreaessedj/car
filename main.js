@@ -516,7 +516,13 @@ if (navigator.geolocation) {
         };
 
         const marker = L.marker([c.lat, c.lon]).addTo(map);
-        marker.bindPopup(`<b>${c.nickname}</b> ${genderLabel ? `<span style='background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;'>${genderLabel}</span>` : ""} ${statusLabel ? `<span style='background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;'>${statusLabel}</span>` : ""}<br>${c.description}<br><a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank'>Naviga</a>`);
+        // Popup con chat
+        marker.bindPopup(`
+          <b>${c.nickname}</b> ${genderLabel ? `<span style='background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;'>${genderLabel}</span>` : ""} ${statusLabel ? `<span style='background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;'>${statusLabel}</span>` : ""}<br>
+          ${c.description}<br>
+          <a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank'>Naviga</a><br>
+          <button onclick='openChatForCheckin(${c.id})' style='margin-top:8px;background:#fff6f6;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:4px 14px;font-size:15px;font-weight:600;cursor:pointer;'>💬 Chatta</button>
+        `);
         markers.push(marker);
 
         loadComments(c.id);
