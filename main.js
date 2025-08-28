@@ -388,7 +388,13 @@ if (navigator.geolocation) {
 
   // Se la posizione utente non è disponibile, NON filtrare per distanza
   const filtered = data.filter(c => {
-    const created = new Date(c.created_at);
+    // Parsing robusto cross-browser della data
+    let createdRaw = c.created_at;
+    // Se manca la 'Z' (UTC) e non c'è offset, aggiungila
+    if (typeof createdRaw === 'string' && !createdRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(createdRaw)) {
+      createdRaw += 'Z';
+    }
+    const created = new Date(createdRaw);
     const diff = (now - created) / 1000 / 3600;
     const cityValue = (c.city || "").toLowerCase();
     const matchCity = cityFilter === "" ? true : cityValue.includes(cityFilter);
@@ -402,6 +408,7 @@ if (navigator.geolocation) {
     console.log('Filtro:', {
       id: c.id,
       created_at: c.created_at,
+      createdRaw,
       diff,
       city: c.city,
       cityFilter,
@@ -410,8 +417,14 @@ if (navigator.geolocation) {
       matchGender,
       matchStatus
     });
-  return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
-  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
+  }).sort((a, b) => {
+    // Anche qui parsing robusto per l'ordinamento
+    let aRaw = a.created_at, bRaw = b.created_at;
+    if (typeof aRaw === 'string' && !aRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(aRaw)) aRaw += 'Z';
+    if (typeof bRaw === 'string' && !bRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(bRaw)) bRaw += 'Z';
+    return new Date(bRaw) - new Date(aRaw);
+  });
 
   // Rimuovi la dicitura 'Check-in automatico' da tutti i check-in visualizzati
   console.log('filtered count:', filtered.length);
