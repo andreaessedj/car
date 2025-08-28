@@ -41,6 +41,7 @@ function haversine(lat1, lon1, lat2, lon2) {
 // Genera coordinate random in Italia, evitando centro città (entro 3km) e solo su terraferma
 async function randomItalyCoordsAvoidCenters() {
   let lat, lon, tooClose, isValid = false;
+  let city = null;
   while (!isValid) {
     do {
       lat = Math.random() * (ITALY_BOUNDS.maxLat - ITALY_BOUNDS.minLat) + ITALY_BOUNDS.minLat;
@@ -62,10 +63,11 @@ async function randomItalyCoordsAvoidCenters() {
         !data.address.water
       ) {
         isValid = true;
+        city = data.address.city || data.address.town || data.address.village || null;
       }
     } catch {}
   }
-  return [parseFloat(lat.toFixed(5)), parseFloat(lon.toFixed(5))];
+  return [parseFloat(lat.toFixed(5)), parseFloat(lon.toFixed(5)), city];
 }
 
 // Quanti check-in generare in base all'ora
@@ -119,7 +121,11 @@ const fakeDescriptions = [
 
 // Genera un singolo check-in (async per attendere verifica terraferma)
 async function generateCheckinData() {
-  const [lat, lon] = await randomItalyCoordsAvoidCenters();
+  let lat, lon, city = null;
+  // Tenta fino a trovare una posizione valida su terraferma
+  while (!city) {
+    [lat, lon, city] = await randomItalyCoordsAvoidCenters();
+  }
   return {
     nickname: fakeNames[Math.floor(Math.random() * fakeNames.length)],
     description: fakeDescriptions[Math.floor(Math.random() * fakeDescriptions.length)],
@@ -127,6 +133,7 @@ async function generateCheckinData() {
     status: ["Coppia", "Single"][Math.floor(Math.random() * 2)],
     lat,
     lon,
+    city,
     created_at: new Date().toISOString()
   };
 }
@@ -362,7 +369,7 @@ if (navigator.geolocation) {
       const cityFilter = document.getElementById('cityFilter').value.toLowerCase();
       const genderFilter = document.getElementById('genderFilter')?.value || "";
       const statusFilter = document.getElementById('statusFilter')?.value || "";
-      const distanceFilter = parseInt(document.getElementById('distanceFilter').value, 10);
+  // Filtro distanza rimosso
 
       // Ottieni posizione utente (se disponibile)
       let userLat = null, userLon = null;
@@ -387,10 +394,10 @@ if (navigator.geolocation) {
       }
 
   // Se la posizione utente non è disponibile, NON filtrare per distanza
+  // Nascondi check-in automatici che sono sul mare (nessuna città associata)
   const filtered = data.filter(c => {
     // Parsing robusto cross-browser della data
     let createdRaw = c.created_at;
-    // Se manca la 'Z' (UTC) e non c'è offset, aggiungila
     if (typeof createdRaw === 'string' && !createdRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(createdRaw)) {
       createdRaw += 'Z';
     }
@@ -398,28 +405,13 @@ if (navigator.geolocation) {
     const diff = (now - created) / 1000 / 3600;
     const cityValue = (c.city || "").toLowerCase();
     const matchCity = cityFilter === "" ? true : cityValue.includes(cityFilter);
-    let matchDistance = true;
-    if (userLat != null && userLon != null) {
-      const dist = getDistanceKm(userLat, userLon, c.lat, c.lon);
-      matchDistance = dist <= distanceFilter;
-    }
     const matchGender = genderFilter ? c.gender === genderFilter : true;
     const matchStatus = statusFilter ? c.status === statusFilter : true;
-    console.log('Filtro:', {
-      id: c.id,
-      created_at: c.created_at,
-      createdRaw,
-      diff,
-      city: c.city,
-      cityFilter,
-      matchCity,
-      matchDistance,
-      matchGender,
-      matchStatus
-    });
-    return diff <= 6 && matchCity && matchDistance && matchGender && matchStatus;
+    // Nascondi check-in se lat/lon sono "sul mare" (nessuna città associata)
+    const isLand = c.city && typeof c.city === 'string' && c.city.trim().length > 0;
+    if (!isLand) return false;
+    return diff <= 6 && matchCity && matchGender && matchStatus;
   }).sort((a, b) => {
-    // Anche qui parsing robusto per l'ordinamento
     let aRaw = a.created_at, bRaw = b.created_at;
     if (typeof aRaw === 'string' && !aRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(aRaw)) aRaw += 'Z';
     if (typeof bRaw === 'string' && !bRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(bRaw)) bRaw += 'Z';
@@ -462,7 +454,7 @@ if (navigator.geolocation) {
           <b>${c.nickname}</b> 
           ${genderLabel ? `<span style=\"background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;\">${genderLabel}</span>` : ""}
           ${statusLabel ? `<span style=\"background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;\">${statusLabel}</span>` : ""}
-          : ${c.description} (${c.city || ""})<br>
+          : ${c.description} ${c.city ? `(${c.city})` : ""}<br>
           <button class='like-btn' data-id='${c.id}' style='background:${liked ? "#ff3366" : "#e3f7ff"};color:${liked ? "#fff" : "#3366ff"};border:none;border-radius:8px;padding:2px 10px;font-size:14px;margin:4px 0 4px 0;cursor:pointer;'>❤️ ${likeCount + (liked ? 1 : 0)}</button>
           ${chatBtn}
           ${reportBtn}
