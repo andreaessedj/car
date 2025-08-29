@@ -1,5 +1,8 @@
-const { createClient } = supabase;
-const supa = createClient('https://seweuyiyvicoqvtgjwss.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko');
+if (!window.supa) {
+  const { createClient } = supabase;
+  window.supa = createClient('https://seweuyiyvicoqvtgjwss.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko');
+}
+const supa = window.supa;
 
 // --- GENERAZIONE AUTOMATICA CHECK-IN RANDOM ITALIA ---
 const fakeNames = [
@@ -71,11 +74,28 @@ async function randomItalyCoordsAvoidCenters() {
 }
 
 // Quanti check-in generare in base all'ora
-function getCheckinCountForHour(hour) {
-  if (hour >= 1 && hour <= 4) return 0;
-  if (hour >= 18 && hour <= 23) return Math.floor(Math.random() * 19) + 18;
-  if (hour >= 10 && hour < 18) return Math.floor(Math.random() * 10) + 8;
-  return Math.floor(Math.random() * 6) + 4;
+function getCheckinCountForHour(hour, minute = 0) {
+  // 00:00 - 02:30: 5-9 check-in
+  if ((hour === 0) || (hour === 1) || (hour === 2 && minute <= 30)) {
+    return Math.floor(Math.random() * 5) + 5; // 5-9
+  }
+  // 08:00 - 10:00: 2-5 check-in
+  if ((hour === 8) || (hour === 9) || (hour === 10 && minute === 0)) {
+    return Math.floor(Math.random() * 4) + 2; // 2-5
+  }
+  // 10:01 - 14:00: 6-14 check-in
+  if ((hour === 10 && minute > 0) || (hour >= 11 && hour <= 13) || (hour === 14 && minute === 0)) {
+    return Math.floor(Math.random() * 9) + 6; // 6-14
+  }
+  // 14:01 - 19:00: 9-24 check-in
+  if ((hour === 14 && minute > 0) || (hour >= 15 && hour <= 18) || (hour === 19 && minute === 0)) {
+    return Math.floor(Math.random() * 16) + 9; // 9-24
+  }
+  // 19:01 - 23:59: 18-36 check-in
+  if ((hour === 19 && minute > 0) || (hour >= 20 && hour <= 23)) {
+    return Math.floor(Math.random() * 19) + 18; // 18-36
+  }
+  return 0;
 }
 
 // Descrizioni realistiche per check-in fake
@@ -160,8 +180,9 @@ function scheduleFakeCheckins() {
   let temp = new Date(lastDate);
   temp.setMinutes(0,0,0);
   while (temp < now) {
-    const hour = temp.getHours();
-    const count = getCheckinCountForHour(hour);
+  const hour = temp.getHours();
+  const minute = temp.getMinutes();
+  const count = getCheckinCountForHour(hour, minute);
     if (count > 0) {
       catchup.push({date: new Date(temp), count});
     }
@@ -184,8 +205,9 @@ function scheduleFakeCheckins() {
   function startHourlyScheduler() {
     async function scheduleNextHour() {
       const now = new Date();
-      const hour = now.getHours();
-      const count = getCheckinCountForHour(hour);
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const count = getCheckinCountForHour(hour, minute);
       if (count > 0) {
         for (let i = 0; i < count; i++) {
           const delay = Math.floor(Math.random() * 60 * 60 * 1000);
@@ -280,6 +302,7 @@ async function confirmCheckIn() {
   const status = document.querySelector('input[name="status"]:checked')?.value || "";
   if (!nickname || !description || tempLat === null || tempLon === null || !gender || !status) return alert("Compila tutti i campi e seleziona genere e stato.");
 
+  // Pubblica il check-in senza controllo login anonimo
   const insertCheckin = async (photoData) => {
     const city = await getCityFromCoords(tempLat, tempLon);
     const { error } = await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData ?? null, gender, status });
