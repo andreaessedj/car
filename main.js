@@ -1,285 +1,242 @@
-if (!window.supa) {
-  const { createClient } = supabase;
-  window.supa = createClient('https://seweuyiyvicoqvtgjwss.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko');
-}
-const supa = window.supa;
 
-// --- GENERAZIONE AUTOMATICA CHECK-IN RANDOM ITALIA ---
+/* ======= Supabase client ======= */
+const { createClient } = supabase;
+/* Sostituisci con i tuoi valori reali se non già inizializzato altrove */
+const SUPABASE_URL = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL : 'https://seweuyiyvicoqvtgjwss.supabase.co';
+const SUPABASE_ANON = typeof window.SUPABASE_ANON === 'string' ? window.SUPABASE_ANON : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko';
+const supa = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ======= Random check-in SEMPRE su terra in Italia =======
+   Strategia: scegliamo una città "interna" e generiamo un punto casuale entro 5 km.
+   Questo garantisce che il punto sia su terraferma e dentro i confini italiani. */
+const inlandCityCenters = [
+  // Nord-Ovest / Nord
+  {name:'Aosta', lat:45.7370, lon:7.3170},
+  {name:'Torino', lat:45.0703, lon:7.6869},
+  {name:'Cuneo', lat:44.3845, lon:7.5426},
+  {name:'Asti', lat:44.9000, lon:8.2064},
+  {name:'Alessandria', lat:44.9120, lon:8.6150},
+  {name:'Novara', lat:45.4450, lon:8.6222},
+  {name:'Pavia', lat:45.1860, lon:9.1556},
+  {name:'Milano', lat:45.4642, lon:9.1900},
+  {name:'Bergamo', lat:45.6983, lon:9.6773},
+  {name:'Brescia', lat:45.5416, lon:10.2118},
+  {name:'Cremona', lat:45.1333, lon:10.0227},
+  {name:'Mantova', lat:45.1564, lon:10.7914},
+  {name:'Trento', lat:46.0700, lon:11.1200},
+  {name:'Bolzano', lat:46.4993, lon:11.3566},
+
+  // Nord-Est / Pianura Padana
+  {name:'Verona', lat:45.4384, lon:10.9916},
+  {name:'Vicenza', lat:45.5455, lon:11.5354},
+  {name:'Padova', lat:45.4064, lon:11.8768},
+  {name:'Treviso', lat:45.6669, lon:12.2430},
+  {name:'Udine', lat:46.0626, lon:13.2340},
+
+  // Centro
+  {name:'Parma', lat:44.8015, lon:10.3280},
+  {name:'Reggio Emilia', lat:44.6970, lon:10.6313},
+  {name:'Modena', lat:44.6471, lon:10.9252},
+  {name:'Bologna', lat:44.4949, lon:11.3426},
+  {name:'Firenze', lat:43.7696, lon:11.2558},
+  {name:'Prato', lat:43.8800, lon:11.1000},
+  {name:'Pistoia', lat:43.9300, lon:10.9200},
+  {name:'Siena', lat:43.3188, lon:11.3308},
+  {name:'Arezzo', lat:43.4633, lon:11.8797},
+  {name:'Perugia', lat:43.1107, lon:12.3908},
+  {name:'Terni', lat:42.5636, lon:12.6427},
+  {name:"L'Aquila", lat:42.3512, lon:13.3984},
+  {name:'Viterbo', lat:42.4207, lon:12.1077},
+  {name:'Rieti', lat:42.4040, lon:12.8570},
+
+  // Sud (interno)
+  {name:'Frosinone', lat:41.6400, lon:13.3500},
+  {name:'Benevento', lat:41.1300, lon:14.7800},
+  {name:'Avellino', lat:40.9140, lon:14.7950},
+  {name:'Campobasso', lat:41.5600, lon:14.6600},
+  {name:'Potenza', lat:40.6403, lon:15.8050},
+  {name:'Matera', lat:40.6663, lon:16.6043},
+  {name:'Cosenza', lat:39.2989, lon:16.2533},
+  {name:'Catanzaro', lat:38.9108, lon:16.5878},
+
+  // Isole (interno)
+  {name:'Nuoro', lat:40.3215, lon:9.3293},     // Sardegna
+  {name:'Sassari', lat:40.7272, lon:8.5597},
+  {name:'Enna', lat:37.5667, lon:14.2833},    // Sicilia
+  {name:'Caltanissetta', lat:37.4900, lon:14.0613}
+];
+
 const fakeNames = [
   "Luca", "Giulia", "Marco", "Sara", "Ale", "Vale", "Ste", "Marty", "Fede", "Roby",
   "Simone", "Anna", "Gio", "Fra", "Cri", "Teo", "Simo", "Dani", "Leo", "Miki"
 ];
 
-// Centri dei principali capoluoghi (lat, lon)
-const cityCenters = [
-  [45.4642, 9.19],    // Milano
-  [41.9028, 12.4964], // Roma
-  [40.8522, 14.2681], // Napoli
-  [45.0703, 7.6869],  // Torino
-  [43.7696, 11.2558], // Firenze
-  [44.4949, 11.3426], // Bologna
-  [44.4056, 8.9463],  // Genova
-  [38.1157, 13.3615], // Palermo
-  [41.1171, 16.8719], // Bari
-  [45.4384, 10.9916], // Verona
-];
-
-// Italia bounds
-const ITALY_BOUNDS = {
-  minLat: 36.5,
-  maxLat: 47,
-  minLon: 6.6,
-  maxLon: 18.5
-};
-
-// Calcola distanza tra due punti (km)
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+/* ---- Utils ---- */
+function deg2rad(d){ return d * Math.PI / 180; }
+function haversineKm(a, b){
+  const R = 6371; // km
+  const dLat = deg2rad(b.lat - a.lat);
+  const dLng = deg2rad(b.lon - a.lon);
+  const lat1 = deg2rad(a.lat);
+  const lat2 = deg2rad(b.lat);
+  const s = Math.sin(dLat/2)**2 + Math.sin(dLng/2)**2 * Math.cos(lat1) * Math.cos(lat2);
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function randomPointNear(lat, lon, maxKm = 5){
+  // distribuzione uniforme per area
+  const u = Math.random(); // 0..1
+  const v = Math.random();
+  const r = maxKm * Math.sqrt(u); // 0..maxKm
+  const theta = 2 * Math.PI * v;
+  const dLat = (r * Math.cos(theta)) / 111; // ~km->deg
+  const dLon = (r * Math.sin(theta)) / (111 * Math.cos(deg2rad(lat)));
+  return { lat: lat + dLat, lon: lon + dLon };
 }
 
-// Genera coordinate random in Italia, evitando centro città (entro 3km) e solo su terraferma
-async function randomItalyCoordsAvoidCenters() {
-  let lat, lon, tooClose, isValid = false;
-  let city = null;
-  while (!isValid) {
-    do {
-      lat = Math.random() * (ITALY_BOUNDS.maxLat - ITALY_BOUNDS.minLat) + ITALY_BOUNDS.minLat;
-      lon = Math.random() * (ITALY_BOUNDS.maxLon - ITALY_BOUNDS.minLon) + ITALY_BOUNDS.minLon;
-      tooClose = cityCenters.some(([clat, clon]) => haversine(lat, lon, clat, clon) < 3);
-    } while (tooClose);
-    // Verifica se è terraferma e in Italia usando Nominatim
-    try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      // Deve essere Italia e non acqua
-      if (
-        data &&
-        data.address &&
-        data.address.country_code === 'it' &&
-        !data.address.ocean &&
-        !data.address.sea &&
-        !data.address.water
-      ) {
-        isValid = true;
-        city = data.address.city || data.address.town || data.address.village || null;
-      }
-    } catch {}
-  }
-  return [parseFloat(lat.toFixed(5)), parseFloat(lon.toFixed(5)), city];
+function getCheckinCountForHour(hour) {
+  if (hour >= 1 && hour <= 6) return 30 + Math.floor(Math.random() * 20);   // 30-50
+  if (hour >= 7 && hour <= 17) return 30 + Math.floor(Math.random() * 30);  // 30-60
+  if (hour >= 18 && hour <= 24) return 100 + Math.floor(Math.random() * 30);// 100-130
+  return 50;
+}
+function generateCheckinData() {
+  const name = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+  const genders = ["M", "F", "Trans", "Trav"];
+  const statuses = ["Single", "Coppia"];
+  const gender = genders[Math.floor(Math.random() * genders.length)];
+  const status = statuses[Math.floor(Math.random() * statuses.length)];
+  const descriptions = [
+    "Luogo tranquillo, facile parcheggio",
+    "Zona discreta, pochi passanti",
+    "Vicino a parco, ottima copertura",
+    "Perfetto al tramonto",
+    "Area riservata, consigliata la sera",
+    "Facile accesso dalla strada principale",
+    "Luogo con ottima privacy",
+    "Panchine e alberi, ottimo per attesa",
+    "Vicino a fermata bus",
+    "Zona coperta in caso di pioggia",
+    "Punto panoramico, vista mozzafiato",
+    "Area poco frequentata, molta privacy",
+    "Ottima illuminazione notturna",
+    "Luogo silenzioso, lontano dal traffico",
+    "Perfetto per incontri riservati",
+    "Parcheggio sempre disponibile",
+    "Spazio nascosto tra gli alberi",
+    "Area ben curata e pulita",
+    "Facile accesso dalla tangenziale",
+    "Luogo discreto vicino al centro",
+    "Ottimo per chi ama la natura",
+    "Panchine disponibili, zona ombreggiata",
+    "Perfetto per una pausa serale",
+    "Zona poco illuminata, massima privacy",
+  ];
+  const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+  return { name, gender, status, description };
 }
 
-// Quanti check-in generare in base all'ora
-function getCheckinCountForHour(hour, minute = 0) {
-  // 00:00 - 02:30: 5-9 check-in
-  if ((hour === 0) || (hour === 1) || (hour === 2 && minute <= 30)) {
-    return Math.floor(Math.random() * 5) + 5; // 5-9
-  }
-  // 08:00 - 10:00: 2-5 check-in
-  if ((hour === 8) || (hour === 9) || (hour === 10 && minute === 0)) {
-    return Math.floor(Math.random() * 4) + 2; // 2-5
-  }
-  // 10:01 - 14:00: 6-14 check-in
-  if ((hour === 10 && minute > 0) || (hour >= 11 && hour <= 13) || (hour === 14 && minute === 0)) {
-    return Math.floor(Math.random() * 9) + 6; // 6-14
-  }
-  // 14:01 - 19:00: 9-24 check-in
-  if ((hour === 14 && minute > 0) || (hour >= 15 && hour <= 18) || (hour === 19 && minute === 0)) {
-    return Math.floor(Math.random() * 16) + 9; // 9-24
-  }
-  // 19:01 - 23:59: 18-36 check-in
-  if ((hour === 19 && minute > 0) || (hour >= 20 && hour <= 23)) {
-    return Math.floor(Math.random() * 19) + 18; // 18-36
-  }
-  return 0;
-}
-
-// Descrizioni realistiche per check-in fake
-const fakeDescriptions = [
-  "Zona tranquilla, parcheggio facile",
-  "Ottimo posto per incontrarsi",
-  "Vista panoramica, poco traffico",
-  "Area appartata, consigliata la sera",
-  "Spazio ampio, privacy garantita",
-  "Perfetto per chi cerca discrezione",
-  "Frequentato da coppie",
-  "Luogo sicuro, illuminato",
-  "Consigliato dopo le 21",
-  "Facile da raggiungere in auto",
-  "Ambiente rilassato, atmosfera piacevole",
-  "Zona verde, ideale per passeggiate",
-  "Punto panoramico, vista mozzafiato",
-  "Area poco frequentata, molta privacy",
-  "Ottima illuminazione notturna",
-  "Luogo silenzioso, lontano dal traffico",
-  "Perfetto per incontri riservati",
-  "Parcheggio sempre disponibile",
-  "Spazio nascosto tra gli alberi",
-  "Area ben curata e pulita",
-  "Facile accesso dalla tangenziale",
-  "Luogo discreto vicino al centro",
-  "Ottimo per chi ama la natura",
-  "Panchine disponibili, zona ombreggiata",
-  "Perfetto per una pausa serale",
-  "Zona poco illuminata, massima privacy",
-  "Luogo frequentato da persone educate",
-  "Spazio ampio per gruppi",
-  "Zona con molti alberi, fresca d'estate",
-  "Luogo appartato vicino al parcheggio",
-  "Area facilmente raggiungibile",
-  "Ottimo punto di ritrovo",
-  "Zona tranquilla anche nei weekend",
-  "Luogo ideale per chi cerca relax",
-  "Area con fontanella d'acqua",
-  "Spazio verde ben tenuto",
-  "Perfetto per incontri discreti dopo cena"
-];
-
-// Genera un singolo check-in (async per attendere verifica terraferma)
-async function generateCheckinData() {
-  let lat, lon, city = null;
-  // Tenta fino a trovare una posizione valida su terraferma
-  while (!city) {
-    [lat, lon, city] = await randomItalyCoordsAvoidCenters();
-  }
-  return {
-    nickname: fakeNames[Math.floor(Math.random() * fakeNames.length)],
-    description: fakeDescriptions[Math.floor(Math.random() * fakeDescriptions.length)],
-    gender: ["M", "F", "Trav", "Trans"][Math.floor(Math.random() * 4)],
-    status: ["Coppia", "Single"][Math.floor(Math.random() * 2)],
-    lat,
-    lon,
-    city,
-    created_at: new Date().toISOString()
-  };
-}
-
-// Inserisce un check-in su Supabase
+/* ======= Fake check-in inserter (terraferma garantita) ======= */
 async function insertFakeCheckin() {
-  const data = await generateCheckinData();
-  await supa.from('checkins').insert([data]);
+  const center = inlandCityCenters[Math.floor(Math.random() * inlandCityCenters.length)];
+  const { lat, lon } = randomPointNear(center.lat, center.lon, 5); // ≤5 km
+  const d = generateCheckinData();
+  const nickname = d.name;
+  const gender = d.gender;
+  const status = d.status;
+  const description = d.description + " (auto)";
+  const city = center.name; // opzionale: reverse geocoding per maggiore precisione
+  try {
+    await supa.from('checkins').insert({
+      nickname, description, lat, lon, city, photo: null, gender, status
+    });
+  } catch (e) {
+    console.error('Errore insert fake check-in', e);
+  }
 }
 
-// Scheduler: ogni ora genera N check-in distribuiti casualmente
-function scheduleFakeCheckins() {
-  // Recupera l'ultimo timestamp di generazione check-in
-  const lastCheckinKey = 'lastFakeCheckinTime';
+async function scheduleFakeCheckins() {
   const now = new Date();
-  let last = localStorage.getItem(lastCheckinKey);
-  let lastDate = last ? new Date(last) : null;
-  // Se non c'è mai stato, parti da ora - 48h (max recupero)
-  if (!lastDate || isNaN(lastDate.getTime())) {
-    lastDate = new Date(now.getTime() - 48 * 60 * 60 * 1000);
-  }
-  // Genera check-in per ogni ora mancante
-  let catchup = [];
-  let temp = new Date(lastDate);
-  temp.setMinutes(0,0,0);
-  while (temp < now) {
-  const hour = temp.getHours();
-  const minute = temp.getMinutes();
-  const count = getCheckinCountForHour(hour, minute);
-    if (count > 0) {
-      catchup.push({date: new Date(temp), count});
-    }
-    temp.setHours(temp.getHours() + 1);
-  }
-  async function doCatchup() {
-    for (const item of catchup) {
-      for (let i = 0; i < item.count; i++) {
-        try {
-          await insertFakeCheckin();
-        } catch (e) {
-          // console.error('Errore check-in catchup:', e);
-        }
-      }
-    }
-    // Aggiorna il timestamp
-    localStorage.setItem(lastCheckinKey, now.toISOString());
-    startHourlyScheduler();
-  }
-  function startHourlyScheduler() {
-    async function scheduleNextHour() {
-      const now = new Date();
   const hour = now.getHours();
-  const minute = now.getMinutes();
-  const count = getCheckinCountForHour(hour, minute);
-      if (count > 0) {
-        for (let i = 0; i < count; i++) {
-          const delay = Math.floor(Math.random() * 60 * 60 * 1000);
-          setTimeout(async () => {
-            try {
-              await insertFakeCheckin();
-            } catch (e) {}
-          }, delay);
-        }
-      }
-      // Aggiorna il timestamp ogni ora
-      localStorage.setItem(lastCheckinKey, now.toISOString());
-      setTimeout(scheduleNextHour, 60 * 60 * 1000);
-    }
-    scheduleNextHour();
+  const count = getCheckinCountForHour(hour);
+  for (let i = 0; i < count; i++) {
+    setTimeout(insertFakeCheckin, Math.random() * 60 * 60 * 1000);
   }
+}
+
+async function doCatchup() {
+  const now = new Date();
+  const hh = now.getHours();
+  if (hh >= 1 && hh <= 6) {
+    for (let i = 0; i < 30; i++) setTimeout(insertFakeCheckin, Math.random() * 10 * 60 * 1000);
+  }
+}
+
+function startHourlyScheduler() {
+  scheduleFakeCheckins();
   doCatchup();
+  scheduleNextHour();
 }
 
-// Avvia la generazione automatica
-scheduleFakeCheckins();
-// --- FINE GENERAZIONE AUTOMATICA ---
-
-// --- NOTIFICHE PUSH AVANZATE ---
-let preferredCity = localStorage.getItem('preferredCity') || '';
-function setPreferredCity(city) {
-  preferredCity = city;
-  localStorage.setItem('preferredCity', city);
+function scheduleNextHour() {
+  const now = new Date();
+  const msToNextHour = (60 - now.getMinutes()) * 60 * 1000 - now.getSeconds() * 1000 - now.getMilliseconds();
+  setTimeout(() => { scheduleFakeCheckins(); scheduleNextHour(); }, msToNextHour + 100);
 }
 
-// Notifiche in tempo reale per i check-in
-supa.channel('realtime:checkins')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, payload => {
-    renderCheckins();
-    // Notifica per città preferita
-    if (window.Notification && Notification.permission === 'granted' && preferredCity) {
-      const c = payload.new;
-      if (c && c.city && c.city.toLowerCase().includes(preferredCity.toLowerCase())) {
-        new Notification('Nuovo check-in nella tua città preferita!', {
-          body: `${c.nickname}: ${c.description}`,
-          icon: 'logo.png'
-        });
+/* ======= Realtime notif ======= */
+try{
+  supa.channel('public:checkins')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checkins' }, payload => {
+    const c = payload.new;
+    const stored = JSON.parse(localStorage.getItem('notifiedCheckins') || '[]');
+    if (!stored.includes(c.id)) {
+      if (Notification && Notification.permission === 'granted') {
+        new Notification('Nuovo check-in!', { body: `${c.nickname}: ${c.description}`, icon: 'logo.png' });
       }
     }
-  })
-  .subscribe();
+  }).subscribe();
+} catch(e){ console.warn('Realtime non attivato', e); }
 
-let map = L.map('map').setView([41.9, 12.5], 13);
+/* ======= MAPPA / MARKERS ======= */
+let map = null;             // creata lazy
 let tempLat = null, tempLon = null;
 let markers = [], expirationTimers = [];
+let markerCluster = null;
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+window.AM_initMap = function() {
+  if (map) return;
+  if (typeof L === 'undefined') { console.warn('Leaflet non caricato'); return; }
+  map = L.map('map').setView([41.9, 12.5], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  if (L.markerClusterGroup) {
+    markerCluster = L.markerClusterGroup();
+    map.addLayer(markerCluster);
+  }
+  map.on('click', e => {
+    const { lat, lng } = e.latlng;
+    showModal(lat, lng);
+  });
+  try { renderCheckins(); } catch(e) { console.error(e); }
+};
 
+/* ======= GEOLOCALIZZAZIONE / MODALE ======= */
 function geoCheckIn() {
-  if (!navigator.geolocation) return alert("Geolocalizzazione non supportata.");
+  if (!navigator.geolocation) {
+    window.showToast && showToast('Geolocalizzazione non supportata nel browser', 'error');
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
     pos => {
       const { latitude, longitude } = pos.coords;
-      map.setView([latitude, longitude], 15);
+      if (map) { map.setView([latitude, longitude], 15); }
       showModal(latitude, longitude);
     },
-    () => alert("Errore durante il recupero della posizione."),
+    () => window.showToast ? showToast('Errore durante il recupero della posizione', 'error') : alert('Errore durante il recupero della posizione.'),
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
-
-map.on('click', e => {
-  const { lat, lng } = e.latlng;
-  showModal(lat, lng);
-});
 
 function showModal(lat, lon) {
   tempLat = lat;
@@ -287,32 +244,69 @@ function showModal(lat, lon) {
   document.getElementById('nickname').value = '';
   document.getElementById('description').value = '';
   document.getElementById('photoInput').value = '';
-  document.getElementById('modal').style.display = 'flex';
+  const modal = document.getElementById('modal');
+  modal.style.display = 'flex';
+  modal.hidden = false;
+  // focus primo campo
+  setTimeout(()=>{ document.getElementById('nickname').focus(); }, 50);
 }
 
 function hideModal() {
-  document.getElementById('modal').style.display = 'none';
+  const modal = document.getElementById('modal');
+  modal.style.display = 'none';
+  modal.hidden = true;
 }
 
+/* ======= VALIDAZIONE MICRO-FEEDBACK ======= */
+function validateForm(){
+  const nickname = document.getElementById('nickname');
+  const description = document.getElementById('description');
+  const gender = document.querySelector('input[name="gender"]:checked');
+  const status = document.querySelector('input[name="status"]:checked');
+
+  let ok = true;
+  if (!nickname.value.trim()){ nickname.setAttribute('aria-invalid','true'); ok = false; }
+  else nickname.removeAttribute('aria-invalid');
+
+  if (!description.value.trim()){ description.setAttribute('aria-invalid','true'); ok = false; }
+  else description.removeAttribute('aria-invalid');
+
+  if (!gender){ window.showToast && showToast('Seleziona un genere', 'error'); ok = false; }
+  if (!status){ window.showToast && showToast('Seleziona uno stato', 'error'); ok = false; }
+  if (tempLat === null || tempLon === null){ window.showToast && showToast('Seleziona una posizione sulla mappa o abilita la geolocalizzazione', 'error'); ok = false; }
+
+  return ok;
+}
+
+/* ======= CONFERMA CHECK-IN ======= */
 async function confirmCheckIn() {
+  if (!validateForm()) return;
+
   const nickname = document.getElementById('nickname').value.trim();
   const description = document.getElementById('description').value.trim();
   const photoInput = document.getElementById('photoInput');
   const gender = document.querySelector('input[name="gender"]:checked')?.value || "";
   const status = document.querySelector('input[name="status"]:checked')?.value || "";
-  if (!nickname || !description || tempLat === null || tempLon === null || !gender || !status) return alert("Compila tutti i campi e seleziona genere e stato.");
 
-  // Pubblica il check-in senza controllo login anonimo
+  const btn = document.getElementById('checkinConfirmBtn');
+  if (btn){ btn.disabled = true; btn.textContent = 'Pubblico…'; }
+
   const insertCheckin = async (photoData) => {
     const city = await getCityFromCoords(tempLat, tempLon);
-    const { error } = await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData ?? null, gender, status });
-    if (error) {
-      alert("Errore nel salvataggio del check-in: " + (error.message || error));
-      return;
+    try{
+      const { error } = await supa.from('checkins').insert({ nickname, description, lat: tempLat, lon: tempLon, city, photo: photoData ?? null, gender, status });
+      if (error) throw error;
+      hideModal();
+      renderCheckins();
+      window.showToast && showToast('Check-in pubblicato!', 'success');
+    } catch(e){
+      console.error(e);
+      window.showToast ? showToast('Errore nel salvataggio del check-in', 'error') : alert('Errore nel salvataggio del check-in');
+    } finally {
+      if (btn){ btn.disabled = false; btn.textContent = 'Conferma'; }
     }
-    hideModal();
-    renderCheckins();
   };
+
   if (photoInput.files[0]) {
     const reader = new FileReader();
     reader.onload = function () { insertCheckin(reader.result); };
@@ -324,116 +318,99 @@ async function confirmCheckIn() {
 
 function getCityFromCoords(lat, lon) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-  return fetch(url).then(res => res.json()).then(data => data.address?.city || data.address?.town || data.address?.village || "");
+  return fetch(url)
+    .then(res => res.json())
+    .then(data => data.address?.city || data.address?.town || data.address?.village || data.address?.municipality || "Sconosciuta")
+    .catch(() => "Sconosciuta");
 }
 
+/* ======= RENDER CHECK-INS / LISTA / MARKERS ======= */
 let renderCheckinsLock = false;
-    // Avvio: chiama sempre renderCheckins almeno una volta, anche se la geolocalizzazione fallisce
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const { latitude, longitude } = pos.coords;
-      map.setView([latitude, longitude], 15);
-      renderCheckins().catch(e => {
-        console.error('Errore in renderCheckins:', e);
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
-      });
-    },
-    () => {
-      renderCheckins().catch(e => {
-        console.error('Errore in renderCheckins:', e);
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
-      });
-    },
-    { enableHighAccuracy: true, timeout: 3000, maximumAge: 0 }
-  );
-} else {
-  renderCheckins().catch(e => {
-    console.error('Errore in renderCheckins:', e);
+
+async function renderCheckins() {
+  if (renderCheckinsLock) return;
+  renderCheckinsLock = true;
+
+  const list = document.getElementById("checkinList");
+  list.setAttribute('aria-busy','true');
+  list.innerHTML = "";
+
+  // Pulisci markers
+  if (markers && markers.length) {
+    if (markerCluster) {
+      try { markerCluster.clearLayers(); } catch(e){}
+    } else if (map) {
+      markers.forEach(m => { try { if (m && map.hasLayer(m)) map.removeLayer(m); } catch(e){} });
+    }
+    markers = [];
+  }
+  expirationTimers.forEach(clearInterval);
+  expirationTimers = [];
+
+  let data, error;
+  try {
+    const res = await supa.from('checkins').select('*');
+    data = res.data;
+    error = res.error;
+    if (error) throw error;
+  } catch (e) {
+    renderCheckinsLock = false;
+    list.setAttribute('aria-busy','false');
     const loader = document.getElementById('loader');
     if (loader) loader.style.display = 'none';
-  });
-}
+    window.showToast ? showToast('Errore nel caricamento dei check-in', 'error') : alert('Errore nel caricamento dei check-in');
+    return;
+  }
 
-// All'inizio di renderCheckins, logga i dati ricevuti
-    async function renderCheckins() {
-      if (renderCheckinsLock) return;
-      renderCheckinsLock = true;
-      const list = document.getElementById("checkinList");
-      list.innerHTML = "";
-      // Rimuovi tutti i marker dalla mappa solo se sono presenti
-      if (markers && markers.length) {
-        markers.forEach(m => {
-          if (m && map.hasLayer(m)) map.removeLayer(m);
-        });
-        markers = [];
-      }
-      expirationTimers.forEach(clearInterval);
-      expirationTimers = [];
+  const now = new Date();
+  const cityFilter = (document.getElementById('cityFilter').value || '').toLowerCase();
+  const genderFilter = document.getElementById('genderFilter')?.value || "";
+  const statusFilter = document.getElementById('statusFilter')?.value || "";
+  const onlineOnly = !!document.getElementById('onlineFilter')?.checked;
+  const photoOnly  = !!document.getElementById('photoFilter')?.checked;
+  const radiusKm   = parseInt(document.getElementById('radiusFilter')?.value || '0', 10) || 0;
 
-      let data, error;
-      try {
-        const res = await supa.from('checkins').select('*');
-        data = res.data;
-        error = res.error;
-        console.log('Check-in caricati:', data);
-        if (error) throw error;
-      } catch (e) {
-        renderCheckinsLock = false;
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
-        alert("Errore nel caricamento dei check-in: " + (e.message || e));
-        return;
-      }
+  const cutoffOnline = new Date(Date.now() - 15 * 60 * 1000);
 
-      const now = new Date();
-      const cityFilter = document.getElementById('cityFilter').value.toLowerCase();
-      const genderFilter = document.getElementById('genderFilter')?.value || "";
-      const statusFilter = document.getElementById('statusFilter')?.value || "";
-  // Filtro distanza rimosso
+  // Posizione utente (per raggio)
+  let userLat = null, userLon = null;
+  if (navigator.geolocation) {
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 3000, maximumAge: 0 });
+      });
+      userLat = pos.coords.latitude;
+      userLon = pos.coords.longitude;
+    } catch {}
+  }
 
-      // Ottieni posizione utente (se disponibile)
-      let userLat = null, userLon = null;
-      if (navigator.geolocation) {
-        try {
-          const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 3000, maximumAge: 0 });
-          });
-          userLat = pos.coords.latitude;
-          userLon = pos.coords.longitude;
-        } catch {}
-      }
+  function getDistanceKm(lat1, lon1, lat2, lon2) {
+    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return Infinity;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
 
-      function getDistanceKm(lat1, lon1, lat2, lon2) {
-        if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return Infinity;
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
-      }
-
-  // Se la posizione utente non è disponibile, NON filtrare per distanza
-  // Nascondi check-in automatici che sono sul mare (nessuna città associata)
   const filtered = data.filter(c => {
-    // Parsing robusto cross-browser della data
+    // parse created_at robusto
     let createdRaw = c.created_at;
-    if (typeof createdRaw === 'string' && !createdRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(createdRaw)) {
-      createdRaw += 'Z';
-    }
+    if (typeof createdRaw === 'string' && !createdRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(createdRaw)) createdRaw += 'Z';
     const created = new Date(createdRaw);
-    const diff = (now - created) / 1000 / 3600;
     const cityValue = (c.city || "").toLowerCase();
     const matchCity = cityFilter === "" ? true : cityValue.includes(cityFilter);
     const matchGender = genderFilter ? c.gender === genderFilter : true;
     const matchStatus = statusFilter ? c.status === statusFilter : true;
-    // Nascondi check-in se lat/lon sono "sul mare" (nessuna città associata)
+    const onlinePass = onlineOnly ? (created >= cutoffOnline) : true;
+    const photoPass  = photoOnly ? !!c.photo : true;
+    const radiusPass = (radiusKm <= 0 || userLat == null || userLon == null) ? true : (getDistanceKm(userLat, userLon, c.lat, c.lon) <= radiusKm);
+    // 6 ore di durata
+    const notExpired = (now - created) <= (6 * 60 * 60 * 1000);
+    // city obbligatoria per scartare mare (per sicurezza aggiuntiva)
     const isLand = c.city && typeof c.city === 'string' && c.city.trim().length > 0;
-    if (!isLand) return false;
-    return diff <= 6 && matchCity && matchGender && matchStatus;
+    return notExpired && matchCity && matchGender && matchStatus && onlinePass && photoPass && radiusPass && isLand;
   }).sort((a, b) => {
     let aRaw = a.created_at, bRaw = b.created_at;
     if (typeof aRaw === 'string' && !aRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(aRaw)) aRaw += 'Z';
@@ -441,198 +418,192 @@ if (navigator.geolocation) {
     return new Date(bRaw) - new Date(aRaw);
   });
 
-  // Rimuovi la dicitura 'Check-in automatico' da tutti i check-in visualizzati
-  console.log('filtered count:', filtered.length);
+  // Rimuovi “(auto)” per UI
   for (const c0 of filtered) {
-        try {
-          // Clona l'oggetto per non modificare l'originale
-          const c = { ...c0 };
-        console.log("Rendering check-in:", c); // DEBUG
-        if (typeof c.description === 'string' && c.description.trim().toLowerCase().startsWith('check-in automatico')) {
-          // Sostituisci con una descrizione realistica random
-          c.description = fakeDescriptions[Math.floor(Math.random() * fakeDescriptions.length)];
-        }
-        const createdAt = new Date(c.created_at);
-        const expiresAt = new Date(createdAt.getTime() + 6 * 60 * 60 * 1000);
+    if (c0.description && typeof c0.description === 'string') {
+      c0.description = c0.description.replace(/\s*\(auto\)\s*$/i, '');
+    }
+  }
 
-        // Mostra stringa vuota se gender/status non presenti
-        const genderLabel = c.gender ? c.gender : "";
-        const statusLabel = c.status ? c.status : "";
+  // Render lista + marker
+  for (const c of filtered) {
+    const createdAtStr = typeof c.created_at === 'string' && !/[+-][0-9]{2}:[0-9]{2}$/.test(c.created_at) && !c.created_at.endsWith('Z') ? c.created_at + 'Z' : c.created_at;
+    const createdAt = new Date(createdAtStr);
+    const expiresAt = new Date(createdAt.getTime() + 6 * 60 * 60 * 1000);
 
-        const item = document.createElement("div");
-        item.className = "checkin-item";
-        // Like system: salva i like in localStorage per utente
-        let likes = JSON.parse(localStorage.getItem('checkinLikes') || '{}');
-        let likeCount = c.like_count || 0;
-        let liked = likes[c.id] === true;
+    const genderLabel = c.gender || "";
+    const statusLabel = c.status || "";
 
-        // Pulsante chat anonima per ogni check-in
-        const chatBtn = `<button class='chat-btn' data-checkin='${c.id}' style='background:#fff6f6;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:2px 10px;font-size:14px;margin:4px 0 4px 8px;cursor:pointer;'>💬 Chat</button>`;
-        // Pulsante segnala abuso
-        const reportBtn = `<button class='report-btn' data-id='${c.id}' style='background:#ffe3e3;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:2px 8px;font-size:13px;margin:4px 0 4px 8px;cursor:pointer;'>🚩 Segnala</button>`;
-        // Pulsante condividi
-        const shareBtn = `<button class='share-btn' data-lat='${c.lat}' data-lon='${c.lon}' data-nick='${c.nickname}' style='background:#e3f7ff;color:#3366ff;border:1px solid #3366ff;border-radius:8px;padding:2px 8px;font-size:13px;margin:4px 0 4px 8px;cursor:pointer;'>🔗 Condividi</button>`;
+    const item = document.createElement("div");
+    item.className = "checkin-item";
+    item.setAttribute('role','button');
+    item.setAttribute('tabindex','0');
+    item.setAttribute('aria-label', `${c.nickname}, ${genderLabel || 'genere non indicato'}, ${statusLabel || 'stato non indicato'}`);
 
-        item.innerHTML = `
-          <b>${c.nickname}</b> 
-          ${genderLabel ? `<span style=\"background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;\">${genderLabel}</span>` : ""}
-          ${statusLabel ? `<span style=\"background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;\">${statusLabel}</span>` : ""}
-          : ${c.description} ${c.city ? `(${c.city})` : ""}<br>
-          <button class='like-btn' data-id='${c.id}' style='background:${liked ? "#ff3366" : "#e3f7ff"};color:${liked ? "#fff" : "#3366ff"};border:none;border-radius:8px;padding:2px 10px;font-size:14px;margin:4px 0 4px 0;cursor:pointer;'>❤️ ${likeCount + (liked ? 1 : 0)}</button>
-          ${chatBtn}
-          ${reportBtn}
-          ${shareBtn}
-          <div class='expiration-timer' id='timer-${c.id}'>Scade tra...</div>
-          <div id="comments-${c.id}"></div>
-          <div class='comment-input'>
-            <input type='text' id='comment-input-${c.id}' placeholder='Scrivi un commento...'>
-            <button onclick='addComment(${c.id})'>Invia</button>
-          </div>
-        `;
-        // Eventi per segnalazione e condivisione
-        item.querySelector('.report-btn').onclick = function(ev) {
-          ev.stopPropagation();
-          alert('Grazie per la segnalazione. Il check-in sarà revisionato.');
-          // Qui puoi aggiungere logica per inviare la segnalazione a Supabase
-        };
-        item.querySelector('.share-btn').onclick = function(ev) {
-          ev.stopPropagation();
-          const url = `https://maps.google.com/?q=${c.lat},${c.lon}`;
-          if (navigator.share) {
-            navigator.share({
-              title: `Check-in di ${c.nickname}`,
-              text: `${c.nickname}: ${c.description}`,
-              url
-            });
-          } else {
-            prompt('Copia questo link per condividere:', url);
-          }
-        };
-        item.onclick = (e) => { 
-          if (e.target.classList.contains('like-btn')) return;
-          if (e.target.classList.contains('chat-btn')) {
-            openChatForCheckin(e.target.getAttribute('data-checkin'));
-            e.stopPropagation();
-            return;
-          }
-          map.setView([c.lat, c.lon], 16); 
-        };
-  // Ensure item visible even if external CSS hides it
-  item.style.display = item.style.display || 'block';
-  item.style.background = item.style.background || '#fff';
-  item.style.color = item.style.color || '#111';
-  item.style.padding = item.style.padding || '14px 18px';
-  console.log('Appending checkin id:', c.id, 'nick:', c.nickname);
-  list.appendChild(item);
+    // Likes persistenti per utente
+    let likes = JSON.parse(localStorage.getItem('checkinLikes') || '{}');
+    let likeCount = c.like_count || 0;
+    let liked = likes[c.id] === true;
 
-        // Like button event
-        item.querySelector('.like-btn').onclick = function(ev) {
-          ev.stopPropagation();
-          let likes = JSON.parse(localStorage.getItem('checkinLikes') || '{}');
-          if (likes[c.id]) return; // già messo like
-          likes[c.id] = true;
-          localStorage.setItem('checkinLikes', JSON.stringify(likes));
-          this.style.background = '#ff3366';
-          this.style.color = '#fff';
-          let n = parseInt(this.textContent.replace(/[^0-9]/g, '')) || 0;
-          this.innerHTML = `❤️ ${n+1}`;
-        };
+    const chatBtn = `<button class='chat-btn' data-checkin='${c.id}' style='background:var(--chip-rose-bg);color:var(--chip-rose-fg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-weight:600;font-size:14px;margin:4px 0 4px 8px;cursor:pointer;'>💬 Chat</button>`;
+    const reportBtn = `<button class='report-btn' data-id='${c.id}' style='background:#fffaf0;color:#b86b00;border:1px solid #ffe1b3;border-radius:8px;padding:6px 10px;font-weight:600;font-size:14px;margin:4px 0 4px 8px;cursor:pointer;'>🚩 Segnala</button>`;
+    const shareBtn = `<button class='share-btn' data-lat='${c.lat}' data-lon='${c.lon}' style='background:#f0f9ff;color:#1466a8;border:1px solid #bfe8ff;border-radius:8px;padding:6px 10px;font-weight:600;font-size:14px;margin:4px 0 4px 8px;cursor:pointer;'>🔗 Condividi</button>`;
 
-        const marker = L.marker([c.lat, c.lon]).addTo(map);
-        // Popup con chat
-        marker.bindPopup(`
-          <b>${c.nickname}</b> ${genderLabel ? `<span style='background:#ffe3e3;color:#ff3366;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:6px;'>${genderLabel}</span>` : ""} ${statusLabel ? `<span style='background:#e3f7ff;color:#3366ff;font-size:13px;padding:2px 8px;border-radius:8px;margin-left:4px;'>${statusLabel}</span>` : ""}<br>
-          ${c.description}<br>
-          <a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank'>Naviga</a><br>
-          <button onclick='openChatForCheckin(${c.id})' style='margin-top:8px;background:#fff6f6;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:4px 14px;font-size:15px;font-weight:600;cursor:pointer;'>💬 Chatta</button>
-        `);
-        markers.push(marker);
+    item.innerHTML = `
+      <b>${c.nickname}</b> 
+      ${genderLabel ? `<span style="background:var(--chip-rose-bg);color:var(--chip-rose-fg);padding:2px 8px;border-radius:8px;margin-left:6px;">${genderLabel}</span>` : ""}
+      ${statusLabel ? `<span style="background:var(--chip-blue-bg);color:var(--chip-blue-fg);padding:2px 8px;border-radius:8px;margin-left:4px;">${statusLabel}</span>` : ""}
+      : ${c.description} ${c.city ? `(${c.city})` : ""}<br>
+      <button class='like-btn' data-id='${c.id}' style='background:#fff0f4;color:#c2185b;border:1px solid #ffc1d6;border-radius:8px;padding:6px 10px;font-weight:600;margin:6px 0;cursor:pointer;'>❤️ ${likeCount + (liked ? 1 : 0)}</button>
+      ${chatBtn}
+      ${reportBtn}
+      ${shareBtn}
+      <div class='expiration-timer' id='timer-${c.id}'>Scade tra …</div>
+      <div class='comment-input'>
+        <input type='text' id='comment-${c.id}' placeholder='Aggiungi un commento (anonimo)…' aria-label='Commento per ${c.nickname}' />
+        <button data-id='${c.id}'>Invia</button>
+      </div>
+      <div id='comments-${c.id}'></div>
+    `;
+    list.appendChild(item);
 
-        loadComments(c.id);
-
-        const timerElement = document.getElementById(`timer-${c.id}`);
-        const interval = setInterval(() => {
-          const now = new Date();
-          const diff = Math.max(0, Math.floor((expiresAt - now) / 1000));
-          if (diff <= 0) {
-            timerElement.textContent = "Scaduto";
-            clearInterval(interval);
-          } else {
-            const h = Math.floor(diff / 3600);
-            const m = Math.floor((diff % 3600) / 60);
-            const s = diff % 60;
-            timerElement.textContent = `Scade tra ${h}h ${m}m ${s}s`;
-          }
-        }, 1000);
-        expirationTimers.push(interval);
-        } catch (itemErr) {
-          console.error('Errore rendering singolo check-in, salto:', itemErr, c0 && c0.id);
-          continue;
+    // Accesso tastiera
+    item.addEventListener('keydown', (ev)=>{
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        if (map) {
+          map.flyTo([c.lat, c.lon], Math.max(map.getZoom(), 13), { duration: 0.5 });
+          try{
+            const m = markers.find(mk => mk.getLatLng && mk.getLatLng().lat===c.lat && mk.getLatLng().lng===c.lon);
+            m && m.openPopup();
+          }catch{}
         }
       }
-      console.log("Check-in DOM creati:", list.children.length); // DEBUG
-  // Log bounding box per debug
-  const rect = list.getBoundingClientRect();
-  console.log('checkinList rect:', rect.top, rect.left, rect.width, rect.height);
-      // Notifica push locale per nuovi check-in vicini
-      if (window.Notification && Notification.permission === 'granted' && filtered.length > 0) {
-        const lastCheckin = filtered[0];
-        const notifiedIds = JSON.parse(localStorage.getItem('notifiedCheckins') || '[]');
-        if (notifiedIds.indexOf(lastCheckin.id) === -1) {
-          // Solo se il check-in è entro 10km dall'utente
-          if (userLat && userLon && getDistanceKm(userLat, userLon, lastCheckin.lat, lastCheckin.lon) <= 10) {
-            new Notification('Nuovo check-in vicino!', {
-              body: `${lastCheckin.nickname}: ${lastCheckin.description}`,
-              icon: 'logo.png'
-            });
-            notifiedIds.push(lastCheckin.id);
-            localStorage.setItem('notifiedCheckins', JSON.stringify(notifiedIds));
-          }
-        }
-      }
-      renderCheckinsLock = false;
-      // Nascondi loader anche in caso di errore
-      const loader = document.getElementById('loader');
-      if (loader) loader.style.display = 'none';
-      // Aggiorna layout sidebar/mappa su mobile usando la funzione globale di index.html
-      if (typeof updateSidebar === "function") updateSidebar();
+    });
+
+    // Marker + popup
+    if (typeof L !== 'undefined') {
+      const marker = L.marker([c.lat, c.lon]);
+      if (markerCluster) { markerCluster.addLayer(marker); }
+      else if (map) { marker.addTo(map); }
+      marker.bindPopup(`
+        <b>${c.nickname}</b> ${genderLabel ? `<span style='background:var(--chip-rose-bg);color:var(--chip-rose-fg);padding:2px 8px;border-radius:8px;margin-left:6px;'>${genderLabel}</span>` : ""} ${statusLabel ? `<span style='background:var(--chip-blue-bg);color:var(--chip-blue-fg);padding:2px 8px;border-radius:8px;margin-left:4px;'>${statusLabel}</span>` : ""}<br>
+        ${c.description}<br>
+        <a href='https://maps.google.com?q=${c.lat},${c.lon}' target='_blank' rel='noopener'>Naviga</a><br>
+        <button onclick='openChatForCheckin(${c.id})' style='margin-top:6px;background:var(--chip-rose-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:15px;font-weight:600;cursor:pointer;'>💬 Chatta</button>
+      `);
+      markers.push(marker);
     }
 
-// Funzione per caricare i commenti (deve essere fuori da renderCheckins)
-async function loadComments(checkinId) {
-  const div = document.getElementById(`comments-${checkinId}`);
-  const { data, error } = await supa.from('comments').select('*').eq('checkin_id', checkinId).order('created_at', { ascending: false });
-  if (error) return;
-  div.innerHTML = data.map(c => {
-    const date = new Date(c.created_at);
-    const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const dateString = date.toLocaleDateString();
-    // Like ai commenti
-    let commentLikes = JSON.parse(localStorage.getItem('commentLikes') || '{}');
-    let liked = commentLikes[c.id] === true;
-    return `<div class='comment'>🔈 ${c.content} <span style='color:#888;font-size:11px;'>(${dateString} ${timeString})</span>
-      <button class='like-comment-btn' data-id='${c.id}' style='background:${liked ? "#ff3366" : "#e3f7ff"};color:${liked ? "#fff" : "#3366ff"};border:none;border-radius:8px;padding:1px 8px;font-size:12px;margin-left:8px;cursor:pointer;'>👍</button>
-      <button class='report-comment-btn' data-id='${c.id}' style='background:#ffe3e3;color:#ff3366;border:1px solid #ff3366;border-radius:8px;padding:1px 8px;font-size:12px;margin-left:4px;cursor:pointer;'>🚩</button>
-    </div>`;
-  }).join("");
-  // Eventi like e segnalazione commenti
-  div.querySelectorAll('.like-comment-btn').forEach(btn => {
-    btn.onclick = function(ev) {
-      ev.stopPropagation();
-      let commentLikes = JSON.parse(localStorage.getItem('commentLikes') || '{}');
-      const id = btn.getAttribute('data-id');
-      if (commentLikes[id]) return;
-      commentLikes[id] = true;
-      localStorage.setItem('commentLikes', JSON.stringify(commentLikes));
-      btn.style.background = '#ff3366';
-      btn.style.color = '#fff';
-    };
-  });
-  div.querySelectorAll('.report-comment-btn').forEach(btn => {
-    btn.onclick = function(ev) {
-      ev.stopPropagation();
-      alert('Grazie per la segnalazione. Il commento sarà revisionato.');
-      // Qui puoi aggiungere logica per inviare la segnalazione a Supabase
-    };
-  });
+    loadComments(c.id);
+
+    const timerElement = document.getElementById(`timer-${c.id}`);
+    const interval = setInterval(() => {
+      const now2 = new Date();
+      const diff = Math.max(0, Math.floor((expiresAt - now2) / 1000));
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      timerElement.textContent = `Scade tra ${h}h ${m}m ${s}s`;
+      if (diff <= 0) {
+        clearInterval(interval);
+        timerElement.textContent = 'Scaduto';
+      }
+    }, 1000);
+    expirationTimers.push(interval);
+
+    // Like
+    item.querySelector('.like-btn').addEventListener('click', async (ev) => {
+      let likes = JSON.parse(localStorage.getItem('checkinLikes') || '{}');
+      if (likes[c.id]) return;
+      likes[c.id] = true;
+      localStorage.setItem('checkinLikes', JSON.stringify(likes));
+      ev.currentTarget.textContent = `❤️ ${likeCount + 1}`;
+      try { await supa.rpc('increment_like', { checkin_id: c.id }); } catch {}
+    });
+
+    // Chat
+    item.querySelector('.chat-btn').addEventListener('click', () => { openChatForCheckin(c.id); });
+
+    // Report
+    item.querySelector('.report-btn').addEventListener('click', async () => {
+      const reason = prompt("Perché vuoi segnalare questo check-in?");
+      if (!reason) return;
+      try { await supa.from('reports').insert({ checkin_id: c.id, reason }); window.showToast && showToast('Grazie per la segnalazione.', 'success'); } catch (e) { window.showToast ? showToast('Errore durante la segnalazione.', 'error') : alert('Errore'); }
+    });
+
+    // Share
+    item.querySelector('.share-btn').addEventListener('click', async (ev) => {
+      const lat = ev.currentTarget.getAttribute('data-lat');
+      const lon = ev.currentTarget.getAttribute('data-lon');
+      const url = `https://maps.google.com?q=${lat},${lon}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        window.showToast && showToast('Link copiato negli appunti!', 'success');
+      } catch {
+        window.open(url, '_blank', 'noopener');
+      }
+    });
+
+    // Commento
+    item.querySelector('.comment-input button').addEventListener('click', async () => {
+      const input = document.getElementById(`comment-${c.id}`);
+      const text = (input.value || '').trim();
+      if (!text) return;
+      input.value = '';
+      try {
+        await supa.from('comments').insert({ checkin_id: c.id, text });
+        loadComments(c.id);
+      } catch (e) { window.showToast ? showToast('Errore durante l’invio del commento.', 'error') : alert('Errore'); }
+    });
+  }
+
+  // Notifica vicinanza
+  try {
+    if (Notification && Notification.permission === 'granted') {
+      const stored = JSON.parse(localStorage.getItem('notifiedCheckins') || '[]');
+      const lastCheckin = filtered[0];
+      if (lastCheckin && !stored.includes(lastCheckin.id) && userLat && userLon) {
+        const dist = getDistanceKm(userLat, userLon, lastCheckin.lat, lastCheckin.lon);
+        if (dist <= 10) {
+          new Notification('Nuovo check-in vicino!', { body: `${lastCheckin.nickname}: ${lastCheckin.description}`, icon: 'logo.png' });
+          stored.push(lastCheckin.id);
+          localStorage.setItem('notifiedCheckins', JSON.stringify(stored));
+        }
+      }
+    }
+  } catch {}
+
+  renderCheckinsLock = false;
+  list.setAttribute('aria-busy','false');
+  const loader = document.getElementById('loader');
+  if (loader) loader.style.display = 'none';
 }
+
+/* ======= COMMENTI ======= */
+async function loadComments(checkinId) {
+  try {
+    const { data, error } = await supa.from('comments').select('*').eq('checkin_id', checkinId).order('created_at', { ascending: false });
+    if (error) throw error;
+    const container = document.getElementById(`comments-${checkinId}`);
+    container.innerHTML = data.map(c => {
+      const created = new Date(c.created_at);
+      const hh = created.getHours().toString().padStart(2,'0');
+      const mm = created.getMinutes().toString().padStart(2,'0');
+      return `<div class='comment'>${c.text} <small style="color:#888">(${hh}:${mm})</small></div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Errore caricando commenti:', e);
+  }
+}
+
+/* ======= Avvio scheduler (opzionale) ======= */
+try { startHourlyScheduler(); } catch(e){ console.warn('Scheduler non avviato', e); }
+
+/* ======= Export globals richiesti ======= */
+window.geoCheckIn = geoCheckIn;
+window.showModal = showModal;
+window.hideModal = hideModal;
+window.confirmCheckIn = confirmCheckIn;
+window.renderCheckins = renderCheckins;
+window.loadComments = loadComments;
