@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<link rel="stylesheet" href="reskin.css">
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -675,5 +676,19 @@
   <!-- App -->
   <script src="main.js"></script>
   <script src="chat.js"></script>
+
+<!-- Bottom Navigation (mobile) -->
+<nav id="bottomNav" class="bottom-nav" aria-label="Navigazione principale">
+  <button data-tab="map" aria-pressed="true">Mappa</button>
+  <button data-tab="list" aria-pressed="false">Lista</button>
+  <button data-tab="filters" aria-pressed="false">Filtri</button>
+  <button id="themeToggleMobile" aria-pressed="false">Tema</button>
+</nav>
+
+<!-- Floating Action Button -->
+<button id="newCheckinFab" class="fab" aria-label="Nuovo check-in">＋</button>
+
+
+<script src="reskin.js"></script>
 </body>
 </html>
