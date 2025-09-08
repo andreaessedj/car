@@ -1,1 +1,0 @@
-Questo file segnala che auth.js, main.js e index.html sono stati ripuliti da riferimenti al login anonimo. Puoi ora eliminare auth.js se non serve più.

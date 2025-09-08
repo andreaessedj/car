@@ -295,3 +295,7 @@ a { color: var(--accent); }
 
   .cookiebar-row { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
+
+
+/* === Auth/Profile modals size tweak === */
+#authModal .modal-content, #profileModal .modal-content { width: 340px; max-width: 92vw; }

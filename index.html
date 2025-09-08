@@ -8,6 +8,7 @@
   <!-- CSS -->
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="chat.css" />
+  <link rel="stylesheet" href="auth.css" />
 
   <!-- Leaflet CSS (script lazy) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -17,6 +18,12 @@
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+  // 👉 Configura qui le tue credenziali Supabase (OBBLIGATORIO)
+  // Suggerimento: crea un file locale config.local.js per sovrascrivere queste variabili in produzione
+  window.SUPABASE_URL = window.SUPABASE_URL || "https://seweuyiyvicoqvtgjwss.supabase.co";
+  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko";
+</script>
 </head>
 
 <body>
@@ -136,6 +143,22 @@
     <button id="sidebarToggle" class="sidebar-toggle" aria-label="Apri/chiudi barra" style="display:none;">☰</button>
 
     <div id="sidebarContent">
+      <!-- ===== USER CARD ===== -->
+      <div id="userCard" class="user-card" aria-live="polite">
+        <div class="user-row">
+          <img id="userAvatar" src="https://api.dicebear.com/7.x/initials/svg?seed=Guest" alt="Avatar" class="user-avatar" />
+          <div class="user-meta">
+            <strong id="userDisplay">Ospite</strong>
+            <small id="userStatus" class="muted">Non connesso</small>
+          </div>
+        </div>
+        <div class="user-actions">
+          <button id="openAuthBtn" class="btn ghost">Accedi / Registrati</button>
+          <button id="openProfileBtn" class="btn link" style="display:none">Profilo</button>
+          <button id="logoutBtn" class="btn ghost" style="display:none">Esci</button>
+        </div>
+      </div>
+
       <button onclick="openGeoOnboarding('quick')" class="btn cta">📍 Localizzati</button>
 
       <input type="text" id="cityFilter" placeholder="Cerca per città..." oninput="renderCheckins()" class="input" aria-label="Cerca per città" />
@@ -690,5 +713,76 @@
 
 
 <script src="reskin.js"></script>
+
+  <!-- ===== AUTH MODALS ===== -->
+  <div id="authModal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+    <div class="auth-card" role="document">
+      <button class="auth-close" aria-label="Chiudi">✖</button>
+      <h3 id="authTitle">Accedi o registrati</h3>
+      <p class="muted">Usa email e password per creare un profilo.</p>
+
+      <form id="authForm" class="auth-form" novalidate>
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="tuo@email.it" required />
+
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="••••••••" required />
+
+        <div class="auth-btns">
+          <button type="button" id="signInBtn" class="btn primary">Accedi</button>
+          <button type="button" id="signUpBtn" class="btn ghost">Registrati</button>
+        </div>
+        <button type="button" id="resetBtn" class="btn link">Password dimenticata?</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="profileModal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle" hidden>
+    <div class="auth-card" role="document">
+      <button class="auth-close" aria-label="Chiudi">✖</button>
+      <h3 id="profileTitle">Il tuo profilo</h3>
+      <form id="profileForm" class="auth-form" novalidate>
+        <label>Nome visibile</label>
+        <input type="text" id="pf_display_name" placeholder="Utente" maxlength="60" />
+
+        <label>Avatar (URL) <small class="muted">(oppure carica un file)</small></label>
+        <input type="url" id="pf_avatar_url" placeholder="https://..." />
+        <input type="file" id="pf_avatar_file" accept="image/*" />
+
+        <label>Bio</label>
+        <textarea id="pf_bio" rows="3" placeholder="Qualcosa su di te..."></textarea>
+
+        <div class="two-cols">
+          <div>
+            <label>Genere</label>
+            <select id="pf_gender">
+              <option value="">—</option>
+              <option value="M">M</option>
+              <option value="F">F</option>
+              <option value="Trav">Trav</option>
+              <option value="Trans">Trans</option>
+            </select>
+          </div>
+          <div>
+            <label>Status</label>
+            <select id="pf_status">
+              <option value="">—</option>
+              <option value="Coppia">Coppia</option>
+              <option value="Single">Single</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="auth-btns">
+          <button type="button" id="saveProfileBtn" class="btn primary">Salva</button>
+          <button type="button" id="deleteAccountBtn" class="btn ghost" title="Elimina account">Elimina account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supabase auth/profile -->
+  <script src="supabaseClient.js"></script>
+  <script src="auth.js"></script>
 </body>
 </html>

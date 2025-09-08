@@ -1,6 +1,7 @@
 // chat.js
 // Gestione chat privata tra utenti tramite Supabase
-// Usa window.supa definito in main.js
+
+// chat.js - Chat completamente anonima legata al check-in
 
 // Crea il modal chat se non esiste
 if (!document.getElementById('chatModal')) {
@@ -49,7 +50,7 @@ window.openChatForCheckin = function(checkinId) {
 
 async function loadChatMessages() {
   if (!currentCheckinId) return;
-  const { data, error } = await window.supa.from('checkin_chats')
+  const { data, error } = await supa.from('checkin_chats')
     .select('*')
     .eq('checkin_id', currentCheckinId)
     .order('created_at', { ascending: true });
@@ -66,13 +67,13 @@ document.getElementById('sendChatBtn').onclick = async function() {
   const message = input.value.trim();
   if (!message || !currentCheckinId) return;
   const nickname = getAnonNickname();
-  await window.supa.from('checkin_chats').insert({ checkin_id: currentCheckinId, nickname, message });
+  await supa.from('checkin_chats').insert({ checkin_id: currentCheckinId, nickname, message });
   input.value = '';
   loadChatMessages();
 };
 
 // Aggiorna chat in tempo reale
-window.supa.channel('realtime:checkin_chats')
+supa.channel('realtime:checkin_chats')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'checkin_chats' }, payload => {
     if (document.getElementById('chatModal').style.display === 'flex') loadChatMessages();
   })
