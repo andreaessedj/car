@@ -157,6 +157,7 @@ async function insertFakeCheckin() {
   const description = d.description + " (auto)";
   const city = center.name; // opzionale: reverse geocoding per maggiore precisione
   try {
+    console.log(`[FAKE CHECKIN] ${nickname}, ${gender}, ${status}, ${description}, ${city}, ${lat}, ${lon}`);
     await supa.from('checkins').insert({
       nickname, description, lat, lon, city, photo: null, gender, status
     });
@@ -363,6 +364,7 @@ async function renderCheckins() {
     const res = await supa.from('checkins').select('*');
     data = res.data;
     error = res.error;
+    console.log('[CHECKINS SUPABASE]', data);
     if (error) throw error;
   } catch (e) {
     renderCheckinsLock = false;
@@ -417,11 +419,28 @@ async function renderCheckins() {
     const onlinePass = onlineOnly ? (created >= cutoffOnline) : true;
     const photoPass  = photoOnly ? !!c.photo : true;
     const radiusPass = (radiusKm <= 0 || userLat == null || userLon == null) ? true : (getDistanceKm(userLat, userLon, c.lat, c.lon) <= radiusKm);
-    // 6 ore di durata
-    const notExpired = (now - created) <= (6 * 60 * 60 * 1000);
+  // 6 ore di durata
+  const notExpired = (now - created) <= (6 * 60 * 60 * 1000);
     // city obbligatoria per scartare mare (per sicurezza aggiuntiva)
     const isLand = c.city && typeof c.city === 'string' && c.city.trim().length > 0;
-    return notExpired && matchCity && matchGender && matchStatus && onlinePass && photoPass && radiusPass && isLand;
+    const result = notExpired && matchCity && matchGender && matchStatus && onlinePass && photoPass && radiusPass && isLand;
+    console.log('[CHECKIN FILTER]', {
+      id: c.id,
+      nickname: c.nickname,
+      created_at: c.created_at,
+      created,
+      city: c.city,
+      notExpired,
+      matchCity,
+      matchGender,
+      matchStatus,
+      onlinePass,
+      photoPass,
+      radiusPass,
+      isLand,
+      result
+    });
+    return result;
   }).sort((a, b) => {
     let aRaw = a.created_at, bRaw = b.created_at;
     if (typeof aRaw === 'string' && !aRaw.endsWith('Z') && !/[+-][0-9]{2}:[0-9]{2}$/.test(aRaw)) aRaw += 'Z';
@@ -609,7 +628,14 @@ async function loadComments(checkinId) {
 }
 
 /* ======= Avvio scheduler (opzionale) ======= */
-try { startHourlyScheduler(); } catch(e){ console.warn('Scheduler non avviato', e); }
+try { 
+  startHourlyScheduler(); 
+  insertFakeCheckin().then(() => {
+    renderCheckins(); // Aggiorna la lista subito dopo aver generato il check-in automatico
+  });
+} catch(e){ 
+  console.warn('Scheduler non avviato', e); 
+}
 
 /* ======= Export globals richiesti ======= */
 window.geoCheckIn = geoCheckIn;
