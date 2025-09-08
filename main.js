@@ -154,7 +154,7 @@ async function insertFakeCheckin() {
   const nickname = d.name;
   const gender = d.gender;
   const status = d.status;
-  const description = d.description + " (auto)";
+  const description = d.description + "";
   const city = center.name; // opzionale: reverse geocoding per maggiore precisione
   try {
     console.log(`[FAKE CHECKIN] ${nickname}, ${gender}, ${status}, ${description}, ${city}, ${lat}, ${lon}`);
@@ -500,6 +500,9 @@ async function renderCheckins() {
 
     // Accesso tastiera
     item.addEventListener('keydown', (ev)=>{
+      // Blocca la barra spaziatrice solo se NON si sta scrivendo nell'input commento
+      const commentInput = document.getElementById(`comment-${c.id}`);
+      if (ev.target === commentInput) return;
       if (ev.key === 'Enter' || ev.key === ' ') {
         ev.preventDefault();
         if (map) {
@@ -616,6 +619,7 @@ async function loadComments(checkinId) {
   try {
     const { data, error } = await supa.from('comments').select('*').eq('checkin_id', checkinId).order('created_at', { ascending: false });
     if (error) throw error;
+    console.log('[COMMENTI SUPABASE]', { checkinId, data });
     const container = document.getElementById(`comments-${checkinId}`);
     container.innerHTML = data.map(c => {
       const created = new Date(c.created_at);
