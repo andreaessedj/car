@@ -94,10 +94,21 @@ function randomPointNear(lat, lon, maxKm = 5){
 }
 
 function getCheckinCountForHour(hour) {
-  if (hour >= 1 && hour <= 6) return 30 + Math.floor(Math.random() * 20);   // 30-50
-  if (hour >= 7 && hour <= 17) return 30 + Math.floor(Math.random() * 30);  // 30-60
-  if (hour >= 18 && hour <= 24) return 100 + Math.floor(Math.random() * 30);// 100-130
-  return 50;
+  // 00:00–02:00 → 14–20
+  if (hour >= 0 && hour < 2) return 14 + Math.floor(Math.random() * 7); // 14-20
+  // 02:00–07:00 → 3–8
+  if (hour >= 2 && hour < 7) return 3 + Math.floor(Math.random() * 6); // 3-8
+  // 07:00–12:00 → 11–26
+  if (hour >= 7 && hour < 12) return 11 + Math.floor(Math.random() * 16); // 11-26
+  // 12:00–14:00 → 9–18
+  if (hour >= 12 && hour < 14) return 9 + Math.floor(Math.random() * 10); // 9-18
+  // 14:00–18:00 → 6–15
+  if (hour >= 14 && hour < 18) return 6 + Math.floor(Math.random() * 10); // 6-15
+  // 18:00–20:00 → 14–20
+  if (hour >= 18 && hour < 20) return 14 + Math.floor(Math.random() * 7); // 14-20
+  // 20:00–00:00 → 18–28
+  if (hour >= 20 && hour < 24) return 18 + Math.floor(Math.random() * 11); // 18-28
+  return 0;
 }
 function generateCheckinData() {
   const name = fakeNames[Math.floor(Math.random() * fakeNames.length)];
