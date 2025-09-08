@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="it" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adult-Meet</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="chat.css" />
+  <link rel="stylesheet" href="auth.css" />
+
+  <!-- Leaflet CSS (script lazy) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<link rel="stylesheet" href="reskin.css">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+  // 👉 Configura qui le tue credenziali Supabase (OBBLIGATORIO)
+  // Suggerimento: crea un file locale config.local.js per sovrascrivere queste variabili in produzione
+  window.SUPABASE_URL = window.SUPABASE_URL || "https://seweuyiyvicoqvtgjwss.supabase.co";
+  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2V1eWl5dmljb3F2dGdqd3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODkxMDQsImV4cCI6MjA1OTc2NTEwNH0.VmAIM06-p4MZz8fxB3HbTzo1QiA9-JBoabp-Aehu2ko";
+</script>
+</head>
+
+<body>
+  <!-- Skip link accessibilità -->
+  <a class="skip-link" href="#mainContent">Salta al contenuto</a>
+
+  <!-- Pulsante notifiche -->
+  <button id="enableNotifications" class="notif-btn" aria-live="polite">Abilita notifiche</button>
+
+  <!-- Loader -->
+  <div id="loader" class="loader" role="status" aria-live="polite" aria-label="Caricamento">
+    <div class="loader-inner">
+      <img src="logo.png" alt="Logo" />
+      <div class="spinner" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <!-- ===== AGE GATE 18+ ===== -->
+  <div id="ageGate" class="agegate" role="dialog" aria-modal="true" aria-labelledby="ageTitle" aria-describedby="ageDesc">
+    <div class="age-card" role="document">
+      <img src="logo.png" alt="Adult-Meet" class="age-logo" />
+      <h2 id="ageTitle">Area riservata ai maggiorenni (18+)</h2>
+      <p id="ageDesc" class="age-desc">
+        Per accedere a Adult-Meet devi avere almeno 18 anni e accettare Termini, Privacy e Cookie.
+      </p>
+
+      <div class="age-choices">
+        <label class="chk">
+          <input type="checkbox" id="ageConfirm" />
+          Confermo di avere almeno 18 anni
+        </label>
+        <label class="chk">
+          <input type="checkbox" id="termsConfirm" />
+          Accetto i <a href="#" data-open="terms">Termini d’uso</a>, l’<a href="#" data-open="privacy">Informativa Privacy</a> e la
+          <a href="#" data-open="cookies">Cookie Policy</a>
+        </label>
+      </div>
+
+      <div class="age-actions">
+        <button id="enterBtn" class="btn primary" disabled>Entra</button>
+        <button id="leaveBtn" class="btn ghost">Esci</button>
+      </div>
+
+      <small class="age-note">Se non hai 18 anni, chiudi questa pagina.</small>
+    </div>
+  </div>
+
+  <!-- ===== COOKIE BANNER ===== -->
+  <div id="cookieBanner" class="cookiebar" role="region" aria-label="Cookie banner" hidden>
+    <div class="cookiebar-row">
+      <p>
+        Usiamo cookie tecnici e analisi anonimizzate. Proseguendo accetti la nostra <a href="#" data-open="cookies">Cookie Policy</a>.
+      </p>
+      <div class="cookiebar-actions">
+        <button id="cookieSettings" class="btn link" data-open="cookies">Dettagli</button>
+        <button id="cookieAccept" class="btn primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LEGAL MODAL ===== -->
+  <div id="legalModal" class="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legalTitle" hidden>
+    <div class="legal-card" role="document">
+      <button class="legal-close" aria-label="Chiudi">✖</button>
+      <div id="legalContent" class="legal-content"></div>
+    </div>
+  </div>
+
+  <!-- ===== GEO ONBOARDING ===== -->
+  <div id="geoModal" class="geo-modal" role="dialog" aria-modal="true" aria-labelledby="geoTitle" hidden>
+    <div class="geo-card" role="document">
+      <button class="geo-close" aria-label="Chiudi">✖</button>
+      <h3 id="geoTitle">Attiva la posizione</h3>
+      <p class="geo-desc">
+        La posizione serve per mostrarti check-in vicini. Puoi scegliere se condividere una posizione
+        <strong>precisa</strong> o un’area <strong>approssimata (~1–2 km)</strong> per maggiore privacy.
+      </p>
+
+      <div class="geo-choice">
+        <label class="geo-option">
+          <input type="radio" name="geoPrecision" value="accurate" checked />
+          <span>
+            <strong>Precisa</strong><br/>
+            Miglior esperienza e suggerimenti più vicini.
+          </span>
+        </label>
+
+        <label class="geo-option">
+          <input type="radio" name="geoPrecision" value="approx" />
+          <span>
+            <strong>Approssimata (~1–2 km)</strong><br/>
+            Maggiore privacy: arrotondiamo le coordinate.
+          </span>
+        </label>
+      </div>
+
+      <label class="chk" style="margin-top:8px;">
+        <input type="checkbox" id="geoRemember" checked />
+        Ricorda la mia scelta
+      </label>
+
+      <div class="geo-actions">
+        <button id="geoProceed" class="btn primary">Consenti e continua</button>
+        <button id="geoCancel" class="btn ghost">Annulla</button>
+      </div>
+
+      <small class="geo-note">Puoi cambiare idea in qualunque momento cancellando i dati del sito dal browser.</small>
+    </div>
+  </div>
+
+  <!-- ===== TOASTS ===== -->
+  <div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ===== SIDEBAR & CONTENUTO ===== -->
+  <div id="sidebar">
+    <img src="logo.png" alt="Logo" class="logo" />
+    <button id="sidebarToggle" class="sidebar-toggle" aria-label="Apri/chiudi barra" style="display:none;">☰</button>
+
+    <div id="sidebarContent">
+      <!-- ===== USER CARD ===== -->
+      <div id="userCard" class="user-card" aria-live="polite">
+        <div class="user-row">
+          <img id="userAvatar" src="https://api.dicebear.com/7.x/initials/svg?seed=Guest" alt="Avatar" class="user-avatar" />
+          <div class="user-meta">
+            <strong id="userDisplay">Ospite</strong>
+            <small id="userStatus" class="muted">Non connesso</small>
+          </div>
+        </div>
+        <div class="user-actions">
+          <button id="openAuthBtn" class="btn ghost">Accedi / Registrati</button>
+          <button id="openProfileBtn" class="btn link" style="display:none">Profilo</button>
+          <button id="logoutBtn" class="btn ghost" style="display:none">Esci</button>
+        </div>
+      </div>
+
+      <button onclick="openGeoOnboarding('quick')" class="btn cta">📍 Localizzati</button>
+
+      <input type="text" id="cityFilter" placeholder="Cerca per città..." oninput="renderCheckins()" class="input" aria-label="Cerca per città" />
+
+      <select id="genderFilter" onchange="renderCheckins()" class="input" aria-label="Filtro genere">
+        <option value="">Genere: tutti</option>
+        <option value="M">M</option>
+        <option value="F">F</option>
+        <option value="Trav">Trav</option>
+        <option value="Trans">Trans</option>
+      </select>
+
+      <select id="statusFilter" onchange="renderCheckins()" class="input" aria-label="Filtro stato">
+        <option value="">Stato: tutti</option>
+        <option value="Coppia">Coppia</option>
+        <option value="Single">Single</option>
+      </select>
+
+      <label class="toggle">
+        <input type="checkbox" id="onlineFilter" onchange="renderCheckins()" />
+        <span>Online ora</span>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" id="photoFilter" onchange="renderCheckins()" />
+        <span>Solo con foto</span>
+      </label>
+
+      <div class="distance-group">
+        <label for="radiusFilter">Raggio:</label>
+        <input type="range" id="radiusFilter" min="0" max="25" step="1" value="0"
+               oninput="document.getElementById('radiusValue').textContent = (this.value==0?'∞':this.value) + ' km'"
+               onchange="renderCheckins()" aria-valuemin="0" aria-valuemax="25" aria-valuenow="0" aria-label="Filtra per raggio in km" />
+        <span id="radiusValue">∞ km</span>
+      </div>
+
+      <!-- Toggle Tema -->
+      <button id="themeToggle" class="btn ghost" aria-pressed="false" aria-label="Cambia tema">🌓 Tema</button>
+
+      <p>oppure clicca sulla mappa</p>
+    </div>
+  </div>
+
+  <main id="mainContent">
+    <div id="map" role="application" aria-label="Mappa"></div>
+    <div id="filters"></div>
+    <div id="checkinList" aria-live="polite" aria-busy="false"></div>
+  </main>
+
+  <!-- Modale “Nuovo check-in” -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="newCheckinTitle" hidden>
+    <div id="modalContent" class="modal-content" role="document">
+      <button class="closeBtn" onclick="hideModal()" aria-label="Chiudi">✖</button>
+      <h3 id="newCheckinTitle" style="color:#ff3366;margin-bottom:18px;">Nuovo check-in</h3>
+
+      <label for="nickname">Nome (anonimo)</label>
+      <input type="text" id="nickname" placeholder="Il tuo nome (anonimo)" required aria-required="true" />
+
+      <label for="description">Dettagli</label>
+      <textarea id="description" placeholder="Scrivi dettagli..." rows="3" required aria-required="true"></textarea>
+
+      <fieldset class="flag-group">
+        <legend>Genere</legend>
+        <label><input type="radio" name="gender" value="M"> M</label>
+        <label><input type="radio" name="gender" value="F"> F</label>
+        <label><input type="radio" name="gender" value="Trav"> Trav</label>
+        <label><input type="radio" name="gender" value="Trans"> Trans</label>
+      </fieldset>
+
+      <fieldset class="flag-group">
+        <legend>Stato</legend>
+        <label><input type="radio" name="status" value="Coppia"> Coppia</label>
+        <label><input type="radio" name="status" value="Single"> Single</label>
+      </fieldset>
+
+      <label for="photoInput">Foto (opzionale)</label>
+      <input type="file" accept="image/*" id="photoInput" />
+      <div id="uploadHint" class="upload-hint" aria-live="polite">Nessuna foto selezionata</div>
+
+      <button id="checkinConfirmBtn" onclick="AM_confirmCheckIn()" class="btn primary" aria-live="polite">
+        Conferma
+      </button>
+    </div>
+  </div>
+
+  <!-- ====== Script UI di base ====== -->
+  <script>
+    // Notifiche
+    document.addEventListener('DOMContentLoaded', function () {
+      const btn = document.getElementById('enableNotifications');
+      if (!btn) return;
+      const hideBtn = () => btn.style.display = 'none';
+
+      btn.onclick = function () {
+        if (window.Notification && Notification.permission !== 'granted') {
+          Notification.requestPermission().then(function (permission) {
+            if (permission === 'granted') {
+              hideBtn();
+              window.showToast && showToast('Notifiche attivate ✅', 'success');
+            } else {
+              window.showToast && showToast('Notifiche non abilitate', 'error');
+            }
+          });
+        } else {
+          hideBtn();
+          window.showToast && showToast('Notifiche già abilitate', 'success');
+        }
+      };
+      if (window.Notification && Notification.permission === 'granted') hideBtn();
+    });
+
+    // Loader off
+    window.addEventListener('load', function () {
+      const l = document.getElementById('loader');
+      if (l) l.style.display = 'none';
+    });
+
+    // Sidebar mobile init
+    document.addEventListener('DOMContentLoaded', function () {
+      const sidebar = document.getElementById('sidebar');
+      const isMobile = () => window.innerWidth <= 700;
+      if (sidebar && isMobile() && !sidebar.classList.contains('open')) {
+        sidebar.classList.add('open');
+        typeof updateSidebar === 'function' && updateSidebar();
+      }
+    });
+
+    // Sidebar toggle/resize
+    document.addEventListener('DOMContentLoaded', function () {
+      const sidebar = document.getElementById('sidebar');
+      const toggle = document.getElementById('sidebarToggle');
+      const content = document.getElementById('sidebarContent');
+      const map = document.getElementById('map');
+      const isMobile = () => window.innerWidth <= 700;
+
+      window.updateSidebar = function updateSidebar() {
+        if (!(toggle && sidebar && content && map)) return;
+        if (isMobile()) {
+          toggle.style.display = 'inline-block';
+          if (sidebar.classList.contains('open')) {
+            content.style.display = 'flex';
+            sidebar.style.height = 'auto';
+            map.style.marginTop = content.offsetHeight + 'px';
+            const checkinList = document.getElementById('checkinList');
+            if (checkinList) checkinList.style.marginTop = content.offsetHeight + 'px';
+          } else {
+            content.style.display = 'none';
+            sidebar.style.height = '54px';
+            map.style.marginTop = '54px';
+            const checkinList = document.getElementById('checkinList');
+            if (checkinList) checkinList.style.marginTop = '54px';
+          }
+        } else {
+          toggle.style.display = 'none';
+          content.style.display = 'flex';
+          sidebar.classList.remove('open');
+          sidebar.style.height = '';
+          map.style.marginTop = '';
+          const checkinList = document.getElementById('checkinList');
+          if (checkinList) checkinList.style.marginTop = '';
+        }
+      };
+
+      if (toggle && sidebar && content && map) {
+        toggle.addEventListener('click', function () {
+          sidebar.classList.toggle('open');
+          window.updateSidebar();
+        });
+        window.addEventListener('resize', window.updateSidebar);
+        window.updateSidebar();
+      }
+    });
+  </script>
+
+  <!-- ===== Age-gate + Legal + Cookie logic ===== -->
+  <script>
+    (function () {
+      const LS_AGE = 'am_18_ok';
+      const LS_COOKIE = 'am_cookie_ok';
+
+      const ageGate = document.getElementById('ageGate');
+      const ageConfirm = document.getElementById('ageConfirm');
+      const termsConfirm = document.getElementById('termsConfirm');
+      const enterBtn = document.getElementById('enterBtn');
+      const leaveBtn = document.getElementById('leaveBtn');
+
+      const cookieBanner = document.getElementById('cookieBanner');
+      const cookieAccept = document.getElementById('cookieAccept');
+
+      const legalModal = document.getElementById('legalModal');
+      const legalContent = document.getElementById('legalContent');
+
+      const body = document.body;
+
+      function trapFocus(container) {
+        let focusable = container.querySelectorAll('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])');
+        focusable = Array.prototype.slice.call(focusable);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        container.addEventListener('keydown', function (e) {
+          if (e.key !== 'Tab') return;
+          if (e.shiftKey) {
+            if (document.activeElement === first) { last.focus(); e.preventDefault(); }
+          } else {
+            if (document.activeElement === last) { first.focus(); e.preventDefault(); }
+          }
+        });
+      }
+
+      function openLegal(kind) {
+        let html = '';
+        if (kind === 'terms') html = TERMS_HTML;
+        if (kind === 'privacy') html = PRIVACY_HTML;
+        if (kind === 'cookies') html = COOKIES_HTML;
+
+        legalContent.innerHTML = html;
+        legalModal.hidden = false;
+        body.classList.add('no-scroll');
+        const closeBtn = legalModal.querySelector('.legal-close');
+        if (closeBtn) closeBtn.focus();
+      }
+
+      function closeLegal() {
+        legalModal.hidden = true;
+        body.classList.remove('no-scroll');
+      }
+
+      document.addEventListener('click', function (e) {
+        const t = e.target.closest('[data-open]');
+        if (!t) return;
+        e.preventDefault();
+        openLegal(t.getAttribute('data-open'));
+      });
+
+      legalModal.addEventListener('click', function (e) {
+        if (e.target.classList.contains('legal-close') || e.target === legalModal) {
+          closeLegal();
+        }
+      });
+
+      function updateEnterState() {
+        enterBtn.disabled = !(ageConfirm.checked && termsConfirm.checked);
+      }
+
+      ageConfirm.addEventListener('change', updateEnterState);
+      termsConfirm.addEventListener('change', updateEnterState);
+
+      enterBtn.addEventListener('click', function () {
+        localStorage.setItem(LS_AGE, '1');
+        ageGate.style.display = 'none';
+        body.classList.remove('no-scroll');
+        if (!localStorage.getItem(LS_COOKIE)) {
+          cookieBanner.hidden = false;
+        }
+      });
+
+      leaveBtn.addEventListener('click', function () {
+        window.location.href = 'https://www.google.com';
+      });
+
+      function initAgeGate() {
+        if (!localStorage.getItem(LS_AGE)) {
+          ageGate.style.display = 'flex';
+          body.classList.add('no-scroll');
+          setTimeout(function () {
+            const f = ageGate.querySelector('input, button');
+            if (f) f.focus();
+          }, 50);
+          trapFocus(ageGate);
+        } else {
+          ageGate.style.display = 'none';
+          if (!localStorage.getItem(LS_COOKIE)) {
+            cookieBanner.hidden = false;
+          }
+        }
+      }
+
+      cookieAccept.addEventListener('click', function () {
+        localStorage.setItem(LS_COOKIE, '1');
+        cookieBanner.hidden = true;
+      });
+
+      const TERMS_HTML = `
+        <h2 id="legalTitle">Termini d’uso</h2>
+        <p><strong>Adult-Meet</strong> è riservato a persone maggiorenni (18+). È vietato pubblicare contenuti
+        illegali, offensivi, discriminatori o che violino diritti di terzi. Sei responsabile di ciò che pubblichi
+        (testi, immagini). È vietato lo spam.</p>
+        <p>La localizzazione mostrata agli altri utenti può essere approssimata per ragioni di sicurezza.
+        Possiamo moderare o rimuovere contenuti a nostra discrezione per proteggere la community.</p>
+      `;
+
+      const PRIVACY_HTML = `
+        <h2 id="legalTitle">Informativa Privacy</h2>
+        <p>Titolare del trattamento: Adult-Meet. Trattiamo i dati da te forniti (es. nickname, testo, eventuali foto),
+        e la tua area approssimata, per erogare il servizio di check-in e di scoperta utenti vicini. Le basi giuridiche
+        sono il <em>consenso</em> e l’<em>esecuzione del contratto</em>.</p>
+        <p>I dati sono minimizzati e conservati per il tempo strettamente necessario alle finalità del servizio.
+        Le foto caricate non devono contenere metadati sensibili: provvediamo a rimuovere gli EXIF laddove tecnicamente possibile.</p>
+      `;
+
+      const COOKIES_HTML = `
+        <h2 id="legalTitle">Cookie Policy</h2>
+        <p>Usiamo cookie <strong>tecnici</strong> (es. salvataggio del consenso 18+ e cookie) e strumenti di analisi aggregati/anonimizzati.
+        Non utilizziamo cookie di profilazione a fini pubblicitari.</p>
+      `;
+
+      document.addEventListener('DOMContentLoaded', initAgeGate);
+    })();
+  </script>
+
+  <!-- ===== Toast + Geo Onboarding + Tema + Escape ===== -->
+  <script>
+    (function(){
+      // ---------- TOAST ----------
+      window.showToast = function(message, type){
+        const cont = document.getElementById('toastContainer');
+        if(!cont) return;
+        const el = document.createElement('div');
+        el.className = 'toast ' + (type || 'info');
+        el.textContent = message;
+        cont.appendChild(el);
+        requestAnimationFrame(function(){ el.classList.add('show'); });
+        setTimeout(function(){ el.classList.add('hide'); setTimeout(function(){ el.remove(); }, 300); }, 3000);
+      };
+
+      // Upload hint
+      document.addEventListener('DOMContentLoaded', function(){
+        const photo = document.getElementById('photoInput');
+        const hint = document.getElementById('uploadHint');
+        if(photo && hint){
+          photo.addEventListener('change', function(){
+            if(photo.files && photo.files[0]){
+              hint.textContent = 'Foto selezionata: ' + (photo.files[0].name || 'file');
+              showToast('Foto selezionata', 'info');
+            } else {
+              hint.textContent = 'Nessuna foto selezionata';
+            }
+          });
+        }
+      });
+
+      // ---------- GEO ONBOARDING ----------
+      const GEO_PREF_KEY = 'am_geo_pref'; // 'accurate' | 'approx'
+      const geoModal = document.getElementById('geoModal');
+      const body = document.body;
+
+      function openGeoOnboarding(origin){
+        const pref = localStorage.getItem(GEO_PREF_KEY);
+        if(pref === 'accurate' || pref === 'approx'){
+          installGeoPatch(pref);
+          proceedGeoFlow(origin || 'quick', pref);
+          return;
+        }
+        geoModal.hidden = false;
+        body.classList.add('no-scroll');
+        const closeBtn = geoModal.querySelector('.geo-close');
+        if (closeBtn) closeBtn.focus();
+      }
+      window.openGeoOnboarding = openGeoOnboarding;
+
+      function closeGeoOnboarding(){
+        geoModal.hidden = true;
+        body.classList.remove('no-scroll');
+      }
+
+      // Patch geoloc (posizione approssimata se scelto)
+      let originalGeo = null;
+      let originalWatch = null;
+      function installGeoPatch(mode){
+        window.AM_GEO_MODE = mode;
+        if(originalGeo || originalWatch){ uninstallGeoPatch(); }
+        originalGeo = navigator.geolocation && navigator.geolocation.getCurrentPosition
+          ? navigator.geolocation.getCurrentPosition.bind(navigator.geolocation) : null;
+        originalWatch = navigator.geolocation && navigator.geolocation.watchPosition
+          ? navigator.geolocation.watchPosition.bind(navigator.geolocation) : null;
+        if(!originalGeo) return;
+
+        function round(n, dec){ return Number(n.toFixed(dec)); }
+        function patchSuccess(success){
+          return function(pos){
+            if(window.AM_GEO_MODE === 'approx' && pos && pos.coords){
+              const lat = round(pos.coords.latitude, 2);
+              const lng = round(pos.coords.longitude, 2);
+              const fake = {
+                coords: Object.assign({}, pos.coords, {
+                  latitude: lat, longitude: lng, accuracy: Math.max(pos.coords.accuracy || 0, 1500)
+                }),
+                timestamp: pos.timestamp
+              };
+              try { success(fake); } catch(e){ console.error(e); }
+            } else {
+              try { success(pos); } catch(e){ console.error(e); }
+            }
+          };
+        }
+
+        navigator.geolocation.getCurrentPosition = function(success, error, options){
+          if(!originalGeo) return;
+          originalGeo(patchSuccess(success), error, options);
+        };
+        if(originalWatch){
+          navigator.geolocation.watchPosition = function(success, error, options){
+            return originalWatch(patchSuccess(success), error, options);
+          };
+        }
+      }
+      function uninstallGeoPatch(){
+        if(originalGeo){ navigator.geolocation.getCurrentPosition = originalGeo; originalGeo = null; }
+        if(originalWatch){ navigator.geolocation.watchPosition = originalWatch; originalWatch = null; }
+      }
+
+      function proceedGeoFlow(origin, mode){
+        if(mode === 'approx') showToast('Posizione approssimata attiva (~1–2 km)', 'success');
+        else showToast('Posizione precisa attiva', 'success');
+        try { if(typeof window.geoCheckIn === 'function'){ window.geoCheckIn(); } else { showToast('geoCheckIn non disponibile', 'error'); } }
+        catch (e) { console.error(e); showToast('Errore durante la localizzazione', 'error'); }
+        finally { closeGeoOnboarding(); }
+      }
+
+      document.addEventListener('DOMContentLoaded', function(){
+        const proceed = document.getElementById('geoProceed');
+        const cancel = document.getElementById('geoCancel');
+        if(proceed){
+          proceed.addEventListener('click', function(){
+            const choice = (document.querySelector('input[name="geoPrecision"]:checked') || {}).value || 'accurate';
+            const remember = document.getElementById('geoRemember')?.checked;
+            if(remember){ localStorage.setItem(GEO_PREF_KEY, choice); }
+            installGeoPatch(choice);
+            proceedGeoFlow('onboarding', choice);
+          });
+        }
+        if(cancel){ cancel.addEventListener('click', function(){ closeGeoOnboarding(); showToast('Localizzazione annullata', 'info'); }); }
+        geoModal.addEventListener('click', function(e){
+          if (e.target.classList.contains('geo-close') || e.target === geoModal) { closeGeoOnboarding(); }
+        });
+      });
+
+      // Wrapper Conferma con stato (non rimuove confirmCheckIn)
+      window.AM_confirmCheckIn = function(){
+        const btn = document.getElementById('checkinConfirmBtn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Pubblico…'; }
+        setTimeout(()=>{ // piccolo delay UI
+          try {
+            if(typeof window.confirmCheckIn === 'function'){
+              const res = window.confirmCheckIn();
+              setTimeout(()=>{ showToast('Check-in pubblicato!', 'success'); }, 200);
+              return res;
+            } else {
+              showToast('Funzione conferma non trovata', 'error');
+            }
+          } catch (e) {
+            console.error(e);
+            showToast('Errore durante il check-in', 'error');
+          } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Conferma'; }
+          }
+        }, 50);
+      };
+
+      // ---------- Tema (Dark/Light) ----------
+      const THEME_KEY = 'am_theme';
+      function applyTheme(theme){
+        const dark = theme === 'dark';
+        document.documentElement.classList.toggle('theme-dark', dark);
+        const tbtn = document.getElementById('themeToggle');
+        if (tbtn) tbtn.setAttribute('aria-pressed', String(dark));
+      }
+      function detectPreferred(){
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.addEventListener('DOMContentLoaded', function(){
+        const saved = localStorage.getItem(THEME_KEY) || detectPreferred();
+        applyTheme(saved);
+        const tbtn = document.getElementById('themeToggle');
+        tbtn && tbtn.addEventListener('click', function(){
+          const current = document.documentElement.classList.contains('theme-dark') ? 'dark' : 'light';
+          const next = current === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(THEME_KEY, next);
+          applyTheme(next);
+        });
+      });
+
+      // ---------- ESC per chiudere modali ----------
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape'){
+          const anyOpen = [document.getElementById('modal'), document.getElementById('geoModal'), document.getElementById('legalModal')]
+            .find(el => el && el.hidden === false || (el && getComputedStyle(el).display !== 'none' && !el.hidden));
+          if (anyOpen){
+            // chiudi nell’ordine di priorità
+            const m = document.getElementById('modal');
+            const g = document.getElementById('geoModal');
+            const l = document.getElementById('legalModal');
+            if (g && !g.hidden) g.hidden = true;
+            else if (l && !l.hidden) l.hidden = true;
+            else if (m && getComputedStyle(m).display !== 'none') hideModal();
+            document.body.classList.remove('no-scroll');
+          }
+        }
+      });
+    })();
+  </script>
+
+  <!-- ===== Lazy-load Leaflet & MarkerCluster ===== -->
+  <script>
+    (function(){
+      function loadScript(u){
+        return new Promise(function(res, rej){
+          const s = document.createElement('script');
+          s.src = u; s.async = true; s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      function ensureMap(){
+        if (window._leafletLoaded) return;
+        window._leafletLoaded = true;
+        Promise.resolve()
+          .then(()=>loadScript('https://unpkg.com/leaflet/dist/leaflet.js'))
+          .then(()=>loadScript('https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js'))
+          .then(()=>{ if (window.AM_initMap) window.AM_initMap(); })
+          .catch(err => { console.error('Map load failed', err); window.showToast && showToast('Errore caricando la mappa','error'); });
+      }
+
+      const mapEl = document.getElementById('map');
+      if ('IntersectionObserver' in window && mapEl){
+        const io = new IntersectionObserver(function(entries){
+          entries.forEach(function(e){
+            if (e.isIntersecting){ ensureMap(); io.disconnect(); }
+          });
+        }, { root: null, threshold: 0.1 });
+        io.observe(mapEl);
+      } else {
+        window.addEventListener('load', ensureMap);
+      }
+    })();
+  </script>
+
+  <!-- App -->
+  <script src="main.js"></script>
+  <script src="chat.js"></script>
+
+<!-- Bottom Navigation (mobile) -->
+<nav id="bottomNav" class="bottom-nav" aria-label="Navigazione principale">
+  <button data-tab="map" aria-pressed="true">Mappa</button>
+  <button data-tab="list" aria-pressed="false">Lista</button>
+  <button data-tab="filters" aria-pressed="false">Filtri</button>
+  <button id="themeToggleMobile" aria-pressed="false">Tema</button>
+</nav>
+
+<!-- Floating Action Button -->
+<button id="newCheckinFab" class="fab" aria-label="Nuovo check-in">＋</button>
+
+
+<script src="reskin.js"></script>
+
+  <!-- ===== AUTH MODALS ===== -->
+  <div id="authModal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+    <div class="auth-card" role="document">
+      <button class="auth-close" aria-label="Chiudi">✖</button>
+      <h3 id="authTitle">Accedi o registrati</h3>
+      <p class="muted">Usa email e password per creare un profilo.</p>
+
+      <form id="authForm" class="auth-form" novalidate>
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="tuo@email.it" required />
+
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="••••••••" required />
+
+        <div class="auth-btns">
+          <button type="button" id="signInBtn" class="btn primary">Accedi</button>
+          <button type="button" id="signUpBtn" class="btn ghost">Registrati</button>
+        </div>
+        <button type="button" id="resetBtn" class="btn link">Password dimenticata?</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="profileModal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle" hidden>
+    <div class="auth-card" role="document">
+      <button class="auth-close" aria-label="Chiudi">✖</button>
+      <h3 id="profileTitle">Il tuo profilo</h3>
+      <form id="profileForm" class="auth-form" novalidate>
+        <label>Nome visibile</label>
+        <input type="text" id="pf_display_name" placeholder="Utente" maxlength="60" />
+
+        <label>Avatar (URL) <small class="muted">(oppure carica un file)</small></label>
+        <input type="url" id="pf_avatar_url" placeholder="https://..." />
+        <input type="file" id="pf_avatar_file" accept="image/*" />
+
+        <label>Bio</label>
+        <textarea id="pf_bio" rows="3" placeholder="Qualcosa su di te..."></textarea>
+
+        <div class="two-cols">
+          <div>
+            <label>Genere</label>
+            <select id="pf_gender">
+              <option value="">—</option>
+              <option value="M">M</option>
+              <option value="F">F</option>
+              <option value="Trav">Trav</option>
+              <option value="Trans">Trans</option>
+            </select>
+          </div>
+          <div>
+            <label>Status</label>
+            <select id="pf_status">
+              <option value="">—</option>
+              <option value="Coppia">Coppia</option>
+              <option value="Single">Single</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="auth-btns">
+          <button type="button" id="saveProfileBtn" class="btn primary">Salva</button>
+          <button type="button" id="deleteAccountBtn" class="btn ghost" title="Elimina account">Elimina account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supabase auth/profile -->
+  <script src="supabaseClient.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>

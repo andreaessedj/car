@@ -1,0 +1,153 @@
+/* ===== RADICAL RESKIN (mobile-first) ===== */
+
+/* Tipografia & spazi */
+:root{
+  --radius-xl: 18px;
+  --radius-lg: 12px;
+  --radius-md: 10px;
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+}
+
+/* Mappa full-bleed feeling */
+#map{
+  top: 64px;
+  height: 54vh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Lista con card più ariose */
+#checkinList{
+  height: 38vh;
+  padding: var(--space-4) var(--space-4) calc(16px + env(safe-area-inset-bottom) + 56px) var(--space-4);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow);
+}
+.checkin-item{
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.checkin-item:hover{ transform: translateY(-1px); box-shadow: var(--shadow-strong); }
+
+/* Sidebar = pannello filtri su mobile */
+#sidebar{
+  backdrop-filter: saturate(140%) blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+#sidebar.open { background: linear-gradient(180deg, var(--surface), rgba(0,0,0,0)); }
+#sidebar img.logo{ height: 48px; width: 48px; border-radius: 12px; }
+
+/* Bottom Nav (mobile) */
+.bottom-nav{
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: 56px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 1300;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+}
+.bottom-nav button{
+  appearance: none; background: transparent; border: 0; cursor: pointer;
+  font: 600 14px/1 'Rubik', sans-serif; color: var(--muted);
+}
+.bottom-nav button[aria-pressed="true"]{ color: var(--accent); }
+
+/* Floating Action Button */
+.fab{
+  position: fixed; right: 16px; bottom: calc(56px + env(safe-area-inset-bottom) + 12px);
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff; font-size: 24px; font-weight: 700; line-height: 56px; text-align: center;
+  border: none; box-shadow: 0 10px 30px rgba(0,0,0,.22);
+  z-index: 1350; cursor: pointer;
+}
+.fab:focus-visible{ outline: 3px solid #fff; box-shadow: 0 0 0 3px var(--accent); }
+
+/* Toasts più “material” */
+.toast{ border-radius: 14px; }
+
+/* Modale check-in più ampia su device grandi */
+@media (min-width: 480px){
+  .modal-content{ width: 360px; border-radius: var(--radius-lg); }
+}
+
+/* ===== DESKTOP OPTIMIZATION ===== */
+@media (min-width: 920px) {
+
+  /* Sidebar come colonna sinistra stabile */
+  #sidebar{
+    width: 280px; height: 100vh; position: fixed; top: 0; left: 0;
+    border-right: 1px solid var(--border); border-bottom: 0;
+    background: var(--surface);
+    display: flex; align-items: flex-start; padding: 18px;
+  }
+  #sidebarContent{ flex-direction: column; align-items: stretch; gap: 12px; }
+  #sidebar img.logo{ height: 72px; width: 72px; border-radius: 18px; margin-bottom: 10px; }
+
+  /* Mappa e lista affiancate */
+  #map{
+    position: fixed; top: 0; left: 280px; right: 0; height: 58vh;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    box-shadow: var(--shadow);
+  }
+  #checkinList{
+    position: fixed; left: 280px; right: 0; top: 58vh; bottom: 0;
+    height: auto; padding: 24px 28px 24px 28px;
+    border-radius: var(--radius-xl) 0 0 0;
+  }
+
+  /* Nascondi bottom nav e riposiziona FAB */
+  .bottom-nav{ display: none; }
+  .fab{ bottom: 24px; right: 28px; }
+}
+
+
+/* === Sidebar vertical & centered === */
+#sidebar{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+#sidebarContent{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+#sidebarContent > *{
+  width: 100%;
+  max-width: 240px;
+  text-align: center;
+  margin: 0 !important;
+}
+#sidebar .distance-group{
+  width: 100%;
+  max-width: 240px;
+  justify-content: center;
+}
+#sidebar .toggle{
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; width: 100%;
+}
+
+/* Ensure big logo on top and centered */
+#sidebar img.logo{
+  display: block;
+  margin: 8px auto 4px auto;
+}
+
