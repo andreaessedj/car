@@ -66,7 +66,7 @@
     if (!email || !password) return toast('Compila email e password', 'error');
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return toast(error.message || 'Registrazione non riuscita', 'error');
-    toast(`Controlla la tua email per confermare l'account.`, 'info');
+    toast(`Perfetto. Personalizza le tue info dal Profilo.`, 'info');
     hide(authModal);
     // Il profilo verrà creato al primo login confermato; proviamo comunque
     if (data.user) await ensureProfile(data.user);
