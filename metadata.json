@@ -1,0 +1,5 @@
+{
+  "name": "ADULT-MEET",
+  "description": "An adult dating app featuring a live map of user check-ins across Italy. Users can check in, browse the map, and filter by gender or region, either with an account or anonymously.",
+  "requestFramePermissions": []
+}

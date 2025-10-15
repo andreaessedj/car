@@ -1,0 +1,109 @@
+{
+  "appName": "ADULT-MEET",
+  "filterGender": "Filter by gender",
+  "filterCity": "Filter by city",
+  "newCheckin": "New Check-in",
+  "logout": "Logout",
+  "loginRegister": "Login / Register",
+  "usersOnline": "users online",
+  "searchUsersPlaceholder": "Search users...",
+  "genders": {
+    "All": "All",
+    "M": "Man",
+    "F": "Woman",
+    "Trav": "Crossdresser",
+    "Trans": "Trans",
+    "Coppia": "Couple"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "welcomeBack": "Welcome Back!",
+    "createAccount": "Create an Account",
+    "displayName": "Display Name",
+    "email": "Email",
+    "password": "Password",
+    "processing": "Processing...",
+    "loginSuccess": "Logged in successfully!",
+    "registerSuccess": "Registration successful! Please check your email to confirm.",
+    "userExists": "A user with this email already exists."
+  },
+  "checkinModal": {
+    "title": "Create New Check-in",
+    "acquiringLocation": "Acquiring your location...",
+    "locationError": "Could not get your location. Please grant permission and try again.",
+    "tryAgain": "Try Again",
+    "locationFound": "Location found: {{city}}",
+    "locationRequired": "Location is required to check in.",
+    "nickname": "Nickname",
+    "description": "Description (what are you looking for?)",
+    "gender": "I am",
+    "select": "Select...",
+    "status": "Status",
+    "single": "Single",
+    "couple": "Couple",
+    "photoOptional": "Photo (Optional)",
+    "creating": "Creating...",
+    "checkinNow": "Check-in Now",
+    "adjustLocationMap": "Click on the map to place your pin"
+  },
+  "map": {
+    "unknownLocation": "Unknown Location",
+    "notSpecified": "Not specified",
+    "comment": "Comment",
+    "navigate": "Navigate"
+  },
+  "toasts": {
+    "commentsLoadError": "Could not load comments.",
+    "loginRequired": "You must be logged in to send a message."
+  },
+  "checkinDetail": {
+    "notAvailable": "N/A",
+    "directions": "Directions",
+    "comments": "Comments",
+    "noComments": "No comments yet. Be the first!",
+    "addComment": "Add a comment..."
+  },
+  "dashboard": {
+    "profileUpdated": "Profile updated successfully!",
+    "profileUpdateFailed": "Failed to update profile.",
+    "noBio": "No bio provided.",
+    "gender": "Gender",
+    "status": "Status",
+    "single": "Single",
+    "couple": "Couple",
+    "displayName": "Display Name",
+    "bio": "Bio",
+    "select": "Select...",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "editProfile": "Edit Profile",
+    "profileTab": "Profile",
+    "messagesTab": "Messages",
+    "noMessages": "You have no messages yet.",
+    "selectConversation": "Select a conversation to view messages.",
+    "chatWith": "Chat with {{name}}",
+    "typeMessagePlaceholder": "Type your message...",
+    "you": "You"
+  },
+  "recentCheckins": {
+    "title": "Latest Check-ins"
+  },
+  "recentUsers": {
+    "title": "Latest Users",
+    "noCheckins": "This user has no check-ins yet."
+  },
+  "userProfile": {
+    "title": "User Profile",
+    "sendMessage": "Send Private Message"
+  },
+  "messageModal": {
+    "title": "Message to {{name}}",
+    "placeholder": "Write your message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "success": "Message sent successfully!",
+    "error": "Failed to send message."
+  }
+}
