@@ -33,7 +33,7 @@ const createIcon = (checkin: Checkin) => {
     }
   
     const iconHtml = `
-      <div class="w-10 h-10 p-1 bg-gray-800 bg-opacity-70 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
+      <div class="w-8 h-8 p-1 bg-gray-800 bg-opacity-70 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
         ${ReactDOMServer.renderToString(IconComponent)}
       </div>
     `;
@@ -41,9 +41,9 @@ const createIcon = (checkin: Checkin) => {
     return new L.DivIcon({
         html: iconHtml,
         className: 'custom-leaflet-icon',
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
-        popupAnchor: [0, -40]
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
     });
 };
 
