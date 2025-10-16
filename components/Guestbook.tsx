@@ -110,17 +110,17 @@ const Guestbook: React.FC = () => {
     };
 
     return (
-        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-96 max-w-[90vw] h-[70vh] max-h-[700px] bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-lg shadow-xl z-10 flex flex-col p-4 text-white">
-            <h2 className="text-xl font-bold text-red-500 mb-3 border-b border-gray-600 pb-2">{t('guestbook.title')}</h2>
+        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-80 max-w-[80vw] h-[60vh] max-h-[550px] bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-lg shadow-xl z-10 flex flex-col p-3 text-white">
+            <h2 className="text-lg font-bold text-red-500 mb-2 border-b border-gray-600 pb-1.5">{t('guestbook.title')}</h2>
             
-            <div className="flex-grow overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            <div className="flex-grow overflow-y-auto pr-1.5 space-y-2 custom-scrollbar">
                 {messages.length > 0 ? messages.map(msg => (
-                     <div key={msg.id} className="bg-gray-800 bg-opacity-60 p-3 rounded-lg">
+                     <div key={msg.id} className="bg-gray-800 bg-opacity-60 p-2 rounded-lg">
                         <div className="flex justify-between items-baseline">
                             <p className="font-bold text-red-400 text-sm break-all">{msg.nickname}</p>
                             <p className="text-xs text-gray-400 flex-shrink-0 ml-2">{timeAgo(msg.created_at, t)}</p>
                         </div>
-                        <p className="text-gray-200 mt-1 whitespace-pre-wrap break-words">{msg.message}</p>
+                        <p className="text-gray-200 mt-1 whitespace-pre-wrap break-words text-sm">{msg.message}</p>
                     </div>
                 )) : (
                     <div className="flex items-center justify-center h-full">
@@ -129,9 +129,9 @@ const Guestbook: React.FC = () => {
                 )}
             </div>
             
-            <div className="mt-4 pt-4 border-t border-gray-600">
-                <h3 className="font-semibold mb-2 text-md">{t('guestbook.signTitle')}</h3>
-                <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="mt-2 pt-2 border-t border-gray-600">
+                <h3 className="font-semibold mb-1.5 text-sm">{t('guestbook.signTitle')}</h3>
+                <form onSubmit={handleSubmit} className="space-y-2">
                      <div>
                         <label htmlFor="nickname" className="sr-only">{t('guestbook.nickname')}</label>
                         <input
@@ -140,7 +140,7 @@ const Guestbook: React.FC = () => {
                             placeholder={t('guestbook.nickname')}
                             value={nickname}
                             onChange={(e) => setNickname(e.target.value)}
-                            className="w-full bg-gray-700 text-white p-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                            className="w-full bg-gray-700 text-white py-1.5 px-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                             required
                         />
                     </div>
@@ -151,18 +151,18 @@ const Guestbook: React.FC = () => {
                             placeholder={t('guestbook.message')}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            rows={3}
-                            className="w-full bg-gray-700 text-white p-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                            rows={2}
+                            className="w-full bg-gray-700 text-white py-1.5 px-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                             required
                         />
                     </div>
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-500"
+                        className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-3 rounded-md transition duration-300 disabled:bg-gray-500 text-sm"
                     >
                          {loading ? t('guestbook.signing') : t('guestbook.sign')}
-                        <PaperAirplaneIcon className="h-5 w-5" />
+                        <PaperAirplaneIcon className="h-4 w-4" />
                     </button>
                 </form>
             </div>
