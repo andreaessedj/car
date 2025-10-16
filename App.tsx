@@ -273,7 +273,7 @@ const App: React.FC = () => {
 
             <Guestbook />
 
-            <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center p-4 pointer-events-none">
+            <div className="absolute bottom-0 left-0 right-0 z-10 hidden md:flex justify-center p-4 pointer-events-none">
                 <div className="flex flex-col md:flex-row items-stretch md:items-start gap-4 pointer-events-auto w-full md:w-auto">
                     <div className="w-full md:w-auto">
                         <h3 className="text-white font-semibold mb-2 ml-1 text-sm drop-shadow-lg">{t('recentCheckins.title')}</h3>
