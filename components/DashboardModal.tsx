@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
-import { XMarkIcon, UserCircleIcon, PaperAirplaneIcon } from './icons';
+import { XMarkIcon, UserCircleIcon, PaperAirplaneIcon, ArrowLeftIcon } from './icons';
 import { useTranslation } from '../i18n';
 import type { Message, Profile } from '../types';
 
@@ -321,8 +321,8 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
                             </div>
                         </div>
                     ) : (
-                       <div className="flex h-full">
-                           <div className="w-1/3 border-r border-gray-700 overflow-y-auto">
+                       <div className="flex h-full flex-col md:flex-row">
+                           <div className={`w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-700 overflow-y-auto ${selectedConversation ? 'hidden md:block' : ''}`}>
                                {conversations.length > 0 ? conversations.map(conv => (
                                    <div key={conv.otherUser.id} onClick={() => handleSelectConversation(conv)} className={`p-4 cursor-pointer flex items-center gap-3 ${selectedConversation?.otherUser.id === conv.otherUser.id ? 'bg-gray-700' : 'hover:bg-gray-700/50'}`}>
                                        {conv.otherUser.avatar_url ? (
@@ -342,10 +342,13 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
                                 <p className="text-gray-500 text-center p-8">{t('dashboard.noMessages')}</p>
                                )}
                            </div>
-                           <div className="w-2/3 flex flex-col">
+                           <div className={`w-full md:w-2/3 flex-col ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
                                {selectedConversation ? (
                                     <>
-                                    <div className="p-4 border-b border-gray-700 flex-shrink-0">
+                                    <div className="p-4 border-b border-gray-700 flex-shrink-0 flex items-center gap-3">
+                                        <button onClick={() => setSelectedConversation(null)} className="md:hidden p-1 rounded-full hover:bg-gray-700" aria-label="Back to conversations">
+                                            <ArrowLeftIcon className="h-6 w-6 text-white"/>
+                                        </button>
                                         <h3 className="font-bold text-lg text-white">{t('dashboard.chatWith', { name: selectedConversation.otherUser.display_name })}</h3>
                                     </div>
                                     <div className="flex-grow p-4 space-y-4 overflow-y-auto">

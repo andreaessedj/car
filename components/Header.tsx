@@ -34,11 +34,11 @@ const Header: React.FC<HeaderProps> = ({
     };
 
     return (
-        <header className="absolute top-0 left-0 right-0 z-10 bg-black bg-opacity-50 p-3 flex flex-wrap items-center justify-between gap-2 shadow-lg backdrop-blur-sm">
+        <header className="absolute top-0 left-0 right-0 z-10 bg-black bg-opacity-50 p-3 flex flex-wrap items-center justify-center lg:justify-between gap-3 shadow-lg backdrop-blur-sm">
             <h1 className="text-2xl font-bold text-red-500 tracking-wider">{t('appName')}</h1>
             
-            <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+                <div className="relative w-full sm:w-auto">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
                     </div>
@@ -49,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setIsSearchFocused(true)}
                         onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} // Delay to allow click on results
-                        className="w-48 bg-gray-700 text-white rounded-md pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full sm:w-48 bg-gray-700 text-white rounded-md pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                     {isSearchFocused && searchResults.length > 0 && (
                         <div className="absolute top-full mt-2 w-full bg-gray-800 border border-gray-700 rounded-md shadow-lg z-20">

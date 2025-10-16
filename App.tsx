@@ -274,8 +274,8 @@ const App: React.FC = () => {
             <Guestbook />
 
             <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center p-4 pointer-events-none">
-                <div className="flex items-start gap-4 pointer-events-auto">
-                    <div>
+                <div className="flex flex-col md:flex-row items-stretch md:items-start gap-4 pointer-events-auto w-full md:w-auto">
+                    <div className="w-full md:w-auto">
                         <h3 className="text-white font-semibold mb-2 ml-1 text-sm drop-shadow-lg">{t('recentCheckins.title')}</h3>
                         <RecentCheckinsSlider 
                             checkins={checkins.slice(0, 5)} 
@@ -283,9 +283,9 @@ const App: React.FC = () => {
                         />
                     </div>
                     
-                    <div className="h-32 w-px bg-gray-700 self-center mt-6"></div>
+                    <div className="w-4/5 h-px md:w-px md:h-32 bg-gray-700 self-center md:mt-6"></div>
 
-                    <div>
+                    <div className="w-full md:w-auto">
                         <h3 className="text-white font-semibold mb-2 ml-1 text-sm drop-shadow-lg">{t('recentUsers.title')}</h3>
                         <RecentUsersSlider 
                             users={recentUsers} 

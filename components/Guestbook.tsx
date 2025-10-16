@@ -110,7 +110,7 @@ const Guestbook: React.FC = () => {
     };
 
     return (
-        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-80 max-w-[80vw] h-[60vh] max-h-[550px] bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-lg shadow-xl z-10 flex flex-col p-3 text-white">
+        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-80 max-w-[80vw] h-[60vh] max-h-[550px] bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-lg shadow-xl z-10 hidden lg:flex flex-col p-3 text-white">
             <h2 className="text-lg font-bold text-red-500 mb-2 border-b border-gray-600 pb-1.5">{t('guestbook.title')}</h2>
             
             <div className="flex-grow overflow-y-auto pr-1.5 space-y-2 custom-scrollbar">
