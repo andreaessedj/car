@@ -68,7 +68,7 @@ export const ArrowLeftIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) =>
 // Gender/Status Icons for Map
 export const MaleIcon: React.FC<{ color?: string }> = ({ color = 'currentColor' }) => (
   <svg viewBox="0 0 24 24" fill={color} className="w-full h-full">
-    <path d="M19,4H15V2H13V4H9V2H7V4H5C3.89,4 3,4.89 3,6V20C3,21.11 3.89,22 5,22H19C20.11,22 21,21.11 21,20V6C21,4.89 20.11,4 19,4M12,18A3,3 0 0,1 9,15A3,3 0 0,1 12,12A3,3 0 0,1 15,15A3,3 0 0,1 12,18M16,10H8V7H16V10Z" />
+    <path d="M12,9.5A2.5,2.5 0 0,1 14.5,12A2.5,2.5 0 0,1 12,14.5A2.5,2.5 0 0,1 9.5,12A2.5,2.5 0 0,1 12,9.5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M19,3.5L14.5,8L16,9.5L20.5,5V3.5H19Z" />
   </svg>
 );
 
