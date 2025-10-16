@@ -13,6 +13,7 @@ interface HeaderProps {
     setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
     cityOptions: { value: string; label: string }[];
     onlineUsersCount: number;
+    isCurrentUserOnline: boolean;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
     searchResults: Profile[];
@@ -21,7 +22,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ 
     onCheckInClick, onAuthClick, onDashboardClick, filters, setFilters, 
-    cityOptions, onlineUsersCount, searchQuery, setSearchQuery, 
+    cityOptions, onlineUsersCount, isCurrentUserOnline, searchQuery, setSearchQuery, 
     searchResults, onUserSearchSelect 
 }) => {
     const { user, signOut, profile } = useAuth();
@@ -81,9 +82,15 @@ const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-green-400 p-2 rounded-md bg-black bg-opacity-20" title={`${onlineUsersCount} ${t('usersOnline')}`}>
-                    <UsersIcon className="h-5 w-5"/>
-                    <span className="font-semibold text-sm">{onlineUsersCount}</span>
+                <div className="flex items-center gap-3 text-white p-2 rounded-md bg-black bg-opacity-20">
+                    <div 
+                        className={`h-2.5 w-2.5 rounded-full transition-colors ${isCurrentUserOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}
+                        title={isCurrentUserOnline ? 'Online' : 'Offline'}
+                    ></div>
+                    <div className="flex items-center gap-1.5 text-green-400" title={`${onlineUsersCount} ${t('usersOnline')}`}>
+                        <UsersIcon className="h-5 w-5"/>
+                        <span className="font-semibold text-sm">{onlineUsersCount}</span>
+                    </div>
                 </div>
                 <button onClick={onCheckInClick} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 text-sm">
                     {t('newCheckin')}

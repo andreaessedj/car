@@ -17,30 +17,31 @@ const MessageModal: React.FC<MessageModalProps> = ({ recipient, onClose }) => {
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim() || !user) return;
         setLoading(true);
 
-        try {
-            const { error } = await supabase.from('messages').insert({
-                sender_id: user.id,
-                receiver_id: recipient.id,
-                content: content.trim(),
-                is_read: false,
-            });
-
+        const sendMessagePromise = supabase.from('messages').insert({
+            sender_id: user.id,
+            receiver_id: recipient.id,
+            content: content.trim(),
+            is_read: false,
+        }).then(({ error }) => {
             if (error) throw error;
-            
-            toast.success(t('messageModal.success'));
-            onClose();
+        });
 
-        } catch (error: any) {
-            console.error("Message sending error:", error);
-            toast.error(error.message || t('messageModal.error'));
-        } finally {
-            setLoading(false);
-        }
+        toast.promise(
+            sendMessagePromise,
+            {
+                loading: t('messageModal.sending'),
+                success: () => {
+                    onClose();
+                    return t('messageModal.success');
+                },
+                error: (err: any) => err.message || t('messageModal.error'),
+            }
+        ).finally(() => setLoading(false));
     };
 
     return (

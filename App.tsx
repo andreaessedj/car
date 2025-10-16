@@ -23,6 +23,7 @@ const App: React.FC = () => {
     const [checkins, setCheckins] = useState<Checkin[]>([]);
     const [recentUsers, setRecentUsers] = useState<Profile[]>([]);
     const [onlineUsersCount, setOnlineUsersCount] = useState(0);
+    const [isCurrentUserOnline, setIsCurrentUserOnline] = useState(false);
 
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isCheckInModalOpen, setCheckInModalOpen] = useState(false);
@@ -176,6 +177,7 @@ const App: React.FC = () => {
             })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
+                    setIsCurrentUserOnline(true);
                     const presenceChannel = supabase.channel('online-users');
                     presenceChannel.on('presence', { event: 'sync' }, () => {
                         const count = Object.keys(presenceChannel.presenceState()).length;
@@ -185,6 +187,8 @@ const App: React.FC = () => {
                             await presenceChannel.track({ online_at: new Date().toISOString() });
                         }
                     });
+                } else {
+                    setIsCurrentUserOnline(false);
                 }
             });
 
@@ -199,7 +203,6 @@ const App: React.FC = () => {
 
     const handleCheckInSuccess = () => {
         setCheckInModalOpen(false);
-        toast.success('Check-in created successfully!');
         fetchCheckins();
     };
     
@@ -255,6 +258,7 @@ const App: React.FC = () => {
                 setFilters={setFilters}
                 cityOptions={cityOptions}
                 onlineUsersCount={onlineUsersCount}
+                isCurrentUserOnline={isCurrentUserOnline}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 searchResults={searchResults}

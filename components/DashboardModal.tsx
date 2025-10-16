@@ -43,6 +43,28 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
         return conversations.reduce((acc, conv) => acc + conv.unreadCount, 0);
     }, [conversations]);
 
+    const formatMessageTimestamp = useCallback((dateString: string | undefined): string => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+        const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' };
+        
+        if (messageDay.getTime() === today.getTime()) {
+            return date.toLocaleTimeString([], timeOptions);
+        }
+        
+        if (messageDay.getTime() === yesterday.getTime()) {
+            return `${t('dashboard.yesterday')} ${date.toLocaleTimeString([], timeOptions)}`;
+        }
+        
+        return date.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+    }, [t]);
+
     const fetchMessages = useCallback(async () => {
         if (!user) return;
         
@@ -54,11 +76,11 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
 
         if (error) {
             console.error('Error fetching messages:', error);
-            toast.error("Failed to load messages.");
+            toast.error(t('toasts.messagesLoadError'));
         } else if (data) {
             setAllMessages(data as any);
         }
-    }, [user]);
+    }, [user, t]);
 
     useEffect(() => {
         if (profile) {
@@ -156,10 +178,11 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
         setIsEditing(false);
     };
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!user || !profile) return;
         setLoading(true);
-        try {
+
+        const savePromise = async () => {
             let avatarUrl = profile.avatar_url;
             if (avatarFile) {
                 const filePath = `public/${user.id}/${Date.now()}-${avatarFile.name}`;
@@ -176,15 +199,21 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
                 avatar_url: avatarUrl,
             }).eq('id', user.id);
             if (updateError) throw updateError;
-            toast.success(t('dashboard.profileUpdated'));
             await refreshProfile();
+        };
+
+        toast.promise(
+            savePromise(),
+            {
+                loading: t('toasts.savingProfile'),
+                success: t('dashboard.profileUpdated'),
+                error: (err: any) => err.message || t('dashboard.profileUpdateFailed'),
+            }
+        ).then(() => {
             setIsEditing(false);
-        } catch (error: any) {
-            console.error("Profile update error:", error);
-            toast.error(error.message || t('dashboard.profileUpdateFailed'));
-        } finally {
+        }).finally(() => {
             setLoading(false);
-        }
+        });
     };
 
     const handleSelectConversation = async (conv: Conversation) => {
@@ -324,7 +353,7 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
                                             <div key={msg.id} className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                                                 <div className={`max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg ${msg.sender_id === user?.id ? 'bg-red-600 text-white' : 'bg-gray-600 text-gray-200'}`}>
                                                     <p className="whitespace-pre-wrap">{msg.content}</p>
-                                                    <p className="text-xs text-right mt-1 opacity-70">{new Date(msg.created_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                    <p className="text-xs text-right mt-1 opacity-70">{formatMessageTimestamp(msg.created_at)}</p>
                                                 </div>
                                             </div>
                                         ))}

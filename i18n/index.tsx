@@ -59,7 +59,11 @@ const itTranslations = {
   },
   "toasts": {
     "commentsLoadError": "Impossibile caricare i commenti.",
-    "loginRequired": "Devi essere loggato per inviare un messaggio."
+    "loginRequired": "Devi essere loggato per inviare un messaggio.",
+    "savingProfile": "Salvataggio del profilo in corso...",
+    "checkinSuccess": "Check-in creato con successo!",
+    "checkinFailed": "Creazione del check-in fallita.",
+    "messagesLoadError": "Caricamento messaggi fallito."
   },
   "checkinDetail": {
     "notAvailable": "N/D",
@@ -85,11 +89,12 @@ const itTranslations = {
     "editProfile": "Modifica Profilo",
     "profileTab": "Profilo",
     "messagesTab": "Messaggi",
-    "noMessages": "Non hai ancora nessun messaggio.",
+    "noMessages": "Nessun messaggio ancora. Cerca un utente e inizia una conversazione!",
     "selectConversation": "Seleziona una conversazione per vedere i messaggi.",
     "chatWith": "Chat con {{name}}",
     "typeMessagePlaceholder": "Scrivi il tuo messaggio...",
-    "you": "Tu"
+    "you": "Tu",
+    "yesterday": "Ieri"
   },
   "recentCheckins": {
     "title": "Ultimi Check-in"

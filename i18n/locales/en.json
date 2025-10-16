@@ -55,7 +55,11 @@
   },
   "toasts": {
     "commentsLoadError": "Could not load comments.",
-    "loginRequired": "You must be logged in to send a message."
+    "loginRequired": "You must be logged in to send a message.",
+    "savingProfile": "Saving your profile...",
+    "checkinSuccess": "Check-in created successfully!",
+    "checkinFailed": "Failed to create check-in.",
+    "messagesLoadError": "Failed to load messages."
   },
   "checkinDetail": {
     "notAvailable": "N/A",
@@ -81,7 +85,7 @@
     "editProfile": "Edit Profile",
     "profileTab": "Profile",
     "messagesTab": "Messages",
-    "noMessages": "You have no messages yet.",
+    "noMessages": "No messages yet. Find a user and start a conversation!",
     "selectConversation": "Select a conversation to view messages.",
     "chatWith": "Chat with {{name}}",
     "typeMessagePlaceholder": "Type your message...",

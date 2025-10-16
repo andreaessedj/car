@@ -133,7 +133,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({ onClose, onSuccess }) => {
         getLocation();
     }, [getLocation]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!location) {
             toast.error(t('checkinModal.locationRequired'));
@@ -141,7 +141,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({ onClose, onSuccess }) => {
         }
         setLoading(true);
 
-        try {
+        const createCheckin = async () => {
             let photoUrl: string | null = null;
             if (photo) {
                 const filePath = `public/${user?.id || 'anonymous'}/${Date.now()}-${photo.name}`;
@@ -166,14 +166,19 @@ const CheckInModal: React.FC<CheckInModalProps> = ({ onClose, onSuccess }) => {
             });
 
             if (insertError) throw insertError;
+        };
 
-            onSuccess();
-        } catch (error: any) {
-            console.error("Check-in error:", error);
-            toast.error(error.message || "Failed to create check-in.");
-        } finally {
-            setLoading(false);
-        }
+        toast.promise(
+            createCheckin(),
+            {
+                loading: t('checkinModal.creating'),
+                success: () => {
+                    onSuccess();
+                    return t('toasts.checkinSuccess');
+                },
+                error: (err: any) => err.message || t('toasts.checkinFailed'),
+            }
+        ).finally(() => setLoading(false));
     };
     
     const handleLocationSelect = useCallback((latlng: L.LatLng) => {
