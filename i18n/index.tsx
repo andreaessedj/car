@@ -114,6 +114,29 @@ const itTranslations = {
     "sending": "Invio in corso...",
     "success": "Messaggio inviato con successo!",
     "error": "Impossibile inviare il messaggio."
+  },
+  "guestbook": {
+    "title": "Guestbook",
+    "signTitle": "Firma il guestbook",
+    "nickname": "Nickname",
+    "message": "Il tuo messaggio",
+    "sign": "Firma",
+    "signing": "Invio...",
+    "noMessages": "Nessun messaggio. Sii il primo a firmare!",
+    "success": "Guestbook firmato con successo!"
+  },
+  "timeAgo": {
+    "year": "a",
+    "years": "a",
+    "month": "m",
+    "months": "m",
+    "day": "g",
+    "days": "g",
+    "hour": "o",
+    "hours": "o",
+    "minute": "m",
+    "minutes": "m",
+    "justNow": "adesso"
   }
 };
 

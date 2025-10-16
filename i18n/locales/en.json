@@ -89,7 +89,8 @@
     "selectConversation": "Select a conversation to view messages.",
     "chatWith": "Chat with {{name}}",
     "typeMessagePlaceholder": "Type your message...",
-    "you": "You"
+    "you": "You",
+    "yesterday": "Yesterday"
   },
   "recentCheckins": {
     "title": "Latest Check-ins"
@@ -109,5 +110,28 @@
     "sending": "Sending...",
     "success": "Message sent successfully!",
     "error": "Failed to send message."
+  },
+  "guestbook": {
+    "title": "Guestbook",
+    "signTitle": "Sign the guestbook",
+    "nickname": "Nickname",
+    "message": "Your message",
+    "sign": "Sign",
+    "signing": "Signing...",
+    "noMessages": "No messages yet. Be the first to sign!",
+    "success": "Guestbook signed successfully!"
+  },
+  "timeAgo": {
+    "year": "y",
+    "years": "y",
+    "month": "mo",
+    "months": "mo",
+    "day": "d",
+    "days": "d",
+    "hour": "h",
+    "hours": "h",
+    "minute": "m",
+    "minutes": "m",
+    "justNow": "just now"
   }
 }

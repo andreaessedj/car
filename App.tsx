@@ -14,6 +14,7 @@ import RecentCheckinsSlider from './components/RecentCheckinsSlider';
 import RecentUsersSlider from './components/RecentUsersSlider';
 import UserProfileModal from './components/UserProfileModal';
 import MessageModal from './components/MessageModal';
+import Guestbook from './components/Guestbook';
 import { useTranslation } from './i18n';
 import { generateFakeCheckin } from './services/fakeData';
 
@@ -269,6 +270,8 @@ const App: React.FC = () => {
                 onMarkerClick={setSelectedCheckin}
                 flyToLocation={flyToLocation}
             />
+
+            <Guestbook />
 
             <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center p-4 pointer-events-none">
                 <div className="flex items-start gap-4 pointer-events-auto">

@@ -21,6 +21,11 @@ export interface Database {
         Insert: Partial<Comment>;
         Update: Partial<Comment>;
       };
+      guestbook_messages: {
+        Row: GuestbookMessage;
+        Insert: Partial<GuestbookMessage>;
+        Update: Partial<GuestbookMessage>;
+      };
       profiles: {
         Row: Profile;
         Insert: Partial<Profile>;
@@ -46,6 +51,14 @@ export interface Database {
     }
   }
 }
+
+export type GuestbookMessage = {
+  id: number;
+  created_at: string;
+  nickname: string;
+  message: string;
+  user_id: string | null;
+};
 
 export type Checkin = {
   id: number;
