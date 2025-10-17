@@ -4,6 +4,7 @@ import { GENDERS } from '../constants';
 import { FilterState, Profile } from '../types';
 import { UserCircleIcon, UsersIcon, MagnifyingGlassIcon } from './icons';
 import { useTranslation } from '../i18n';
+import VipStatusIcon from './VipStatusIcon';
 
 interface HeaderProps {
     onCheckInClick: () => void;
@@ -64,7 +65,10 @@ const Header: React.FC<HeaderProps> = ({
                                         ) : (
                                             <UserCircleIcon className="h-8 w-8 text-gray-500" />
                                         )}
-                                        <span className="text-white font-semibold text-sm truncate">{userResult.display_name}</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-white font-semibold text-sm truncate">{userResult.display_name}</span>
+                                            <VipStatusIcon profile={userResult} className="h-4 w-4 flex-shrink-0" />
+                                        </div>
                                     </li>
                                 ))}
                             </ul>

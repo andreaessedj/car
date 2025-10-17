@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n';
 import type { GuestbookMessage } from '../types';
 import { toast } from 'react-hot-toast';
 import { PaperAirplaneIcon } from './icons';
+import VipStatusIcon from './VipStatusIcon';
 
 const timeAgo = (dateString: string, t: (key: string, options?: { [key: string]: string | number }) => string) => {
     const date = new Date(dateString);
@@ -56,17 +57,44 @@ const Guestbook: React.FC = () => {
     }, [profile]);
 
     const fetchMessages = useCallback(async () => {
-        const { data, error } = await supabase
+        const { data: messagesData, error } = await supabase
             .from('guestbook_messages')
             .select('*')
             .order('created_at', { ascending: false })
             .limit(20);
         
         if (error) {
-            console.error('Error fetching guestbook messages:', error);
-        } else {
-            setMessages(data || []);
+            console.error('Error fetching guestbook messages:', error.message);
+            return;
         }
+
+        if (!messagesData || messagesData.length === 0) {
+            setMessages([]);
+            return;
+        }
+
+        const userIds = [...new Set(messagesData.map(m => m.user_id).filter(Boolean))];
+        let profilesMap = new Map();
+
+        if (userIds.length > 0) {
+            const { data: profilesData, error: profilesError } = await supabase
+                .from('profiles')
+                .select('id, is_vip, vip_until')
+                .in('id', userIds as string[]);
+
+            if (profilesError) {
+                console.error('Error fetching profiles for guestbook:', profilesError.message);
+            } else if (profilesData) {
+                profilesMap = new Map(profilesData.map(p => [p.id, { is_vip: p.is_vip, vip_until: p.vip_until }]));
+            }
+        }
+
+        const enrichedMessages = messagesData.map(m => ({
+            ...m,
+            profiles: m.user_id ? profilesMap.get(m.user_id) || null : null,
+        }));
+
+        setMessages(enrichedMessages as any[]);
     }, []);
 
     useEffect(() => {
@@ -74,8 +102,8 @@ const Guestbook: React.FC = () => {
 
         const channel = supabase.channel('guestbook-messages')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guestbook_messages' }, 
-            (payload) => {
-                setMessages(prev => [payload.new as GuestbookMessage, ...prev]);
+            () => {
+                fetchMessages();
             })
             .subscribe();
 
@@ -117,7 +145,10 @@ const Guestbook: React.FC = () => {
                 {messages.length > 0 ? messages.map(msg => (
                      <div key={msg.id} className="bg-gray-800 bg-opacity-60 p-2 rounded-lg">
                         <div className="flex justify-between items-baseline">
-                            <p className="font-bold text-red-400 text-sm break-all">{msg.nickname}</p>
+                             <div className="flex items-center gap-1.5">
+                                <p className="font-bold text-red-400 text-sm break-all">{msg.nickname}</p>
+                                <VipStatusIcon profile={msg.profiles} className="h-4 w-4 flex-shrink-0" />
+                            </div>
                             <p className="text-xs text-gray-400 flex-shrink-0 ml-2">{timeAgo(msg.created_at, t)}</p>
                         </div>
                         <p className="text-gray-200 mt-1 whitespace-pre-wrap break-words text-sm">{msg.message}</p>

@@ -1,0 +1,16 @@
+export const isVipActive = (profile: { is_vip: boolean; vip_until: string | null } | null): boolean => {
+    if (!profile || !profile.is_vip) {
+        return false;
+    }
+    
+    // If vip_until is null, it's a permanent VIP status.
+    if (profile.vip_until === null) {
+        return true;
+    }
+
+    // Otherwise, check if the expiration date is in the future.
+    const expirationDate = new Date(profile.vip_until);
+    const now = new Date();
+    
+    return expirationDate > now;
+};

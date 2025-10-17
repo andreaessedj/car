@@ -58,6 +58,7 @@ export type GuestbookMessage = {
   nickname: string;
   message: string;
   user_id: string | null;
+  profiles: { is_vip: boolean; vip_until: string | null; } | null;
 };
 
 export type Checkin = {
@@ -73,6 +74,7 @@ export type Checkin = {
   status: 'Single' | 'Coppia';
   user_id: string | null;
   display_name: string;
+  profiles: { is_vip: boolean; vip_until: string | null; } | null;
 };
 
 export type Comment = {
@@ -91,6 +93,8 @@ export type Profile = {
   status: 'Single' | 'Coppia' | null;
   avatar_url: string | null;
   created_at?: string;
+  is_vip: boolean;
+  vip_until: string | null;
 };
 
 export type Message = {

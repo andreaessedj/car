@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { Checkin, Comment } from '../types';
 import { XMarkIcon, UserIcon, MapPinIcon, PaperAirplaneIcon, ArrowTopRightOnSquareIcon } from './icons';
 import { useTranslation } from '../i18n';
+import VipStatusIcon from './VipStatusIcon';
 
 interface CheckinDetailModalProps {
     checkin: Checkin;
@@ -75,7 +76,10 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
                 </button>
                 
                 <div className="p-6 border-b border-gray-700">
-                    <h2 className="text-2xl font-bold text-white mb-2">{checkin.nickname}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                        <span>{checkin.nickname}</span>
+                        <VipStatusIcon profile={checkin.profiles} className="h-6 w-6" />
+                    </h2>
                     <div className="flex items-center text-sm text-gray-400 gap-4 flex-wrap">
                         <div className="flex items-center gap-1">
                            <UserIcon className="h-4 w-4" /> 

@@ -3,6 +3,7 @@ import type { Profile } from '../types';
 import { XMarkIcon, UserCircleIcon, PaperAirplaneIcon } from './icons';
 import { useTranslation } from '../i18n';
 import { useAuth } from '../hooks/useAuth';
+import VipStatusIcon from './VipStatusIcon';
 
 interface UserProfileModalProps {
     profile: Profile;
@@ -31,7 +32,10 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ profile, onClose, o
                     </div>
 
                     <div className="flex-1 mt-2">
-                        <h3 className="text-2xl font-bold text-white">{profile.display_name}</h3>
+                        <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                            <span>{profile.display_name}</span>
+                            <VipStatusIcon profile={profile} className="h-6 w-6" />
+                        </h3>
                         <p className="text-gray-300 whitespace-pre-wrap my-3">{profile.bio || t('dashboard.noBio')}</p>
                         <div className="flex flex-col gap-2 text-sm text-gray-300 mt-4 pt-4 border-t border-gray-700">
                              <div className="flex items-center gap-2">

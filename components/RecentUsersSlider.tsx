@@ -2,6 +2,7 @@ import React from 'react';
 import type { Profile } from '../types';
 import { UserIcon } from './icons';
 import { useTranslation } from '../i18n';
+import VipStatusIcon from './VipStatusIcon';
 
 interface RecentUsersSliderProps {
     users: Profile[];
@@ -32,7 +33,10 @@ const RecentUsersSlider: React.FC<RecentUsersSliderProps> = ({ users, onUserClic
                     )}
                     <div className="p-2 flex flex-col justify-between flex-grow">
                         <div>
-                            <h4 className="font-bold text-white text-sm truncate">{user.display_name}</h4>
+                            <h4 className="font-bold text-white text-sm truncate flex items-center gap-1.5">
+                                <span className="truncate">{user.display_name}</span>
+                                <VipStatusIcon profile={user} className="h-4 w-4" />
+                            </h4>
                             <p className="text-xs text-gray-300 truncate">{user.bio || t('dashboard.noBio')}</p>
                         </div>
                         {/* Placeholder to match alignment with check-in card's city row */}

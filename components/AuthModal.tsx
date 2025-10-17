@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-hot-toast';
@@ -30,12 +29,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                 onClose();
             }
         } else {
+            if (displayName.trim() === '') {
+                toast.error(t('auth.displayNameRequired'));
+                setLoading(false);
+                return;
+            }
+
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
-                        display_name: displayName
+                        display_name: displayName.trim()
                     }
                 }
             });

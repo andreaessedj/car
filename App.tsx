@@ -18,6 +18,29 @@ import Guestbook from './components/Guestbook';
 import DisclaimerModal from './components/DisclaimerModal';
 import { useTranslation } from './i18n';
 import { generateFakeCheckin } from './services/fakeData';
+import VipPromoModal from './components/VipPromoModal';
+
+// Cookie helper functions
+const setCookie = (name: string, value: string, days: number) => {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+};
+
+const getCookie = (name: string): string | null => {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i=0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+};
 
 const App: React.FC = () => {
     const { user } = useAuth();
@@ -27,6 +50,7 @@ const App: React.FC = () => {
     const [onlineUsersCount, setOnlineUsersCount] = useState(0);
     const [isCurrentUserOnline, setIsCurrentUserOnline] = useState(false);
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
+    const [isVipPromoModalOpen, setVipPromoModalOpen] = useState(false);
 
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isCheckInModalOpen, setCheckInModalOpen] = useState(false);
@@ -42,29 +66,65 @@ const App: React.FC = () => {
     const [searchResults, setSearchResults] = useState<Profile[]>([]);
 
     useEffect(() => {
-        const accepted = localStorage.getItem('disclaimerAccepted') === 'true';
+        const accepted = getCookie('disclaimerAccepted') === 'true';
         setIsDisclaimerAccepted(accepted);
     }, []);
 
+    // Effect for VIP promo modal
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setVipPromoModalOpen(true);
+        }, 5000); // 5 seconds
+
+        return () => clearTimeout(timer); // Cleanup on unmount
+    }, []);
+
     const handleDisclaimerAccept = () => {
-        localStorage.setItem('disclaimerAccepted', 'true');
+        setCookie('disclaimerAccepted', 'true', 365); // Set cookie for 1 year
         setIsDisclaimerAccepted(true);
     };
 
     const fetchCheckins = useCallback(async () => {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data, error } = await supabase
+        const { data: checkinsData, error } = await supabase
             .from('checkins')
             .select('*')
             .gte('created_at', twentyFourHoursAgo)
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Error fetching checkins:', error);
+            console.error('Error fetching checkins:', error.message);
             toast.error('Could not load check-ins.');
-        } else {
-            setCheckins(data || []);
+            return;
         }
+
+        if (!checkinsData || checkinsData.length === 0) {
+            setCheckins([]);
+            return;
+        }
+
+        const userIds = [...new Set(checkinsData.map(c => c.user_id).filter(Boolean))];
+        let profilesMap = new Map();
+
+        if (userIds.length > 0) {
+            const { data: profilesData, error: profilesError } = await supabase
+                .from('profiles')
+                .select('id, is_vip, vip_until')
+                .in('id', userIds as string[]);
+            
+            if (profilesError) {
+                console.error('Error fetching profiles for checkins:', profilesError.message);
+            } else if (profilesData) {
+                profilesMap = new Map(profilesData.map(p => [p.id, { is_vip: p.is_vip, vip_until: p.vip_until }]));
+            }
+        }
+
+        const enrichedCheckins = checkinsData.map(c => ({
+            ...c,
+            profiles: c.user_id ? profilesMap.get(c.user_id) || null : null,
+        }));
+
+        setCheckins(enrichedCheckins as any[]);
     }, []);
 
     const fetchRecentUsers = useCallback(async () => {
@@ -314,6 +374,7 @@ const App: React.FC = () => {
             {selectedCheckin && <CheckinDetailModal checkin={selectedCheckin} onClose={() => setSelectedCheckin(null)} />}
             {selectedProfile && <UserProfileModal profile={selectedProfile} onClose={() => setSelectedProfile(null)} onSendMessage={handleSendMessage} />}
             {messageRecipient && <MessageModal recipient={messageRecipient} onClose={() => setMessageRecipient(null)} />}
+            {isVipPromoModalOpen && <VipPromoModal onClose={() => setVipPromoModalOpen(false)} />}
         </div>
     );
 };

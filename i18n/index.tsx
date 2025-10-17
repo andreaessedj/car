@@ -30,7 +30,8 @@ const itTranslations = {
     "processing": "Caricamento...",
     "loginSuccess": "Login effettuato con successo!",
     "registerSuccess": "Registrazione completata! Controlla la tua email per confermare.",
-    "userExists": "Esiste già un utente con questa email."
+    "userExists": "Esiste già un utente con questa email.",
+    "displayNameRequired": "Il nome visualizzato è obbligatorio."
   },
   "checkinModal": {
     "title": "Crea Nuovo Check-in",
@@ -63,7 +64,10 @@ const itTranslations = {
     "savingProfile": "Salvataggio del profilo in corso...",
     "checkinSuccess": "Check-in creato con successo!",
     "checkinFailed": "Creazione del check-in fallita.",
-    "messagesLoadError": "Caricamento messaggi fallito."
+    "messagesLoadError": "Caricamento messaggi fallito.",
+    "vipExtended": "Abbonamento VIP esteso con successo!",
+    "vipExtensionFailed": "Impossibile estendere l'abbonamento VIP.",
+    "processing": "Elaborazione..."
   },
   "checkinDetail": {
     "notAvailable": "N/D",
@@ -94,7 +98,13 @@ const itTranslations = {
     "chatWith": "Chat con {{name}}",
     "typeMessagePlaceholder": "Scrivi il tuo messaggio...",
     "you": "Tu",
-    "yesterday": "Ieri"
+    "yesterday": "Ieri",
+    "vipStatusTitle": "Stato VIP",
+    "vipActiveUntil": "Attivo fino al {{date}}",
+    "vipExpiredOn": "Scaduto il {{date}}",
+    "notVip": "Non sei un membro VIP.",
+    "extendVip": "Estendi VIP (30 giorni)",
+    "extendVipComingSoon": "Estendi VIP (Presto Disponibile)"
   },
   "recentCheckins": {
     "title": "Ultimi Check-in"
@@ -149,6 +159,20 @@ const itTranslations = {
     "declaration4": "accettare l’informativa sulla privacy e le condizioni d’uso del sito.",
     "exit": "Se non desideri visualizzare materiali destinati a un pubblico adulto, ti invitiamo a lasciare immediatamente questa pagina.",
     "acceptButton": "Accetto - Entra nel sito"
+  },
+  "vipPromo": {
+    "title": "Diventa VIP (presto disponibile) 🚀",
+    "subtitle": "Sblocca vantaggi esclusivi per incontrare più persone e muoverti con discrezione:",
+    "feature1": "Evidenza check-in",
+    "feature2": "Boost profilo",
+    "feature3": "Messaggi prioritari",
+    "feature4": "Filtri avanzati",
+    "feature5": "Invisibilità",
+    "footer": "Naviga giornalmente e provalo per primo!"
+  },
+  "vip": {
+    "active": "Utente VIP",
+    "expired": "VIP Scaduto"
   }
 };
 

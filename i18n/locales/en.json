@@ -26,7 +26,8 @@
     "processing": "Processing...",
     "loginSuccess": "Logged in successfully!",
     "registerSuccess": "Registration successful! Please check your email to confirm.",
-    "userExists": "A user with this email already exists."
+    "userExists": "A user with this email already exists.",
+    "displayNameRequired": "Display name is required."
   },
   "checkinModal": {
     "title": "Create New Check-in",
@@ -59,7 +60,10 @@
     "savingProfile": "Saving your profile...",
     "checkinSuccess": "Check-in created successfully!",
     "checkinFailed": "Failed to create check-in.",
-    "messagesLoadError": "Failed to load messages."
+    "messagesLoadError": "Failed to load messages.",
+    "vipExtended": "VIP membership extended successfully!",
+    "vipExtensionFailed": "Failed to extend VIP membership.",
+    "processing": "Processing..."
   },
   "checkinDetail": {
     "notAvailable": "N/A",
@@ -90,7 +94,13 @@
     "chatWith": "Chat with {{name}}",
     "typeMessagePlaceholder": "Type your message...",
     "you": "You",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "vipStatusTitle": "VIP Status",
+    "vipActiveUntil": "Active until {{date}}",
+    "vipExpiredOn": "Expired on {{date}}",
+    "notVip": "You are not a VIP member.",
+    "extendVip": "Extend VIP (30 days)",
+    "extendVipComingSoon": "Extend VIP (Coming Soon)"
   },
   "recentCheckins": {
     "title": "Latest Check-ins"
@@ -145,5 +155,19 @@
     "declaration4": "accept the privacy policy and terms of use of the site.",
     "exit": "If you do not wish to view materials intended for an adult audience, please leave this page immediately.",
     "acceptButton": "I Accept - Enter Site"
+  },
+  "vipPromo": {
+    "title": "Become a VIP (coming soon) 🚀",
+    "subtitle": "Unlock exclusive benefits to meet more people and move with discretion:",
+    "feature1": "Highlighted check-ins",
+    "feature2": "Profile boost",
+    "feature3": "Priority messages",
+    "feature4": "Advanced filters",
+    "feature5": "Invisibility mode",
+    "footer": "Browse daily and be the first to try it!"
+  },
+  "vip": {
+    "active": "VIP User",
+    "expired": "VIP Expired"
   }
 }

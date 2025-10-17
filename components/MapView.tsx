@@ -5,6 +5,8 @@ import L from 'leaflet';
 import type { Checkin } from '../types';
 import { MapPinIcon, UserIcon, MaleIcon, FemaleIcon, TransgenderIcon, CoupleIcon, ArrowTopRightOnSquareIcon } from './icons';
 import { useTranslation } from '../i18n';
+import VipStatusIcon from './VipStatusIcon';
+import { isVipActive } from '../utils/vip';
 
 
 const createIcon = (checkin: Checkin) => {
@@ -31,9 +33,11 @@ const createIcon = (checkin: Checkin) => {
                 break;
         }
     }
-  
+    
+    const ringClass = isVipActive(checkin.profiles) ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : '';
+
     const iconHtml = `
-      <div class="w-8 h-8 p-1 bg-gray-800 bg-opacity-70 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
+      <div class="w-8 h-8 p-1 bg-gray-800 bg-opacity-70 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm ${ringClass}">
         ${ReactDOMServer.renderToString(IconComponent)}
       </div>
     `;
@@ -74,7 +78,10 @@ const MapView: React.FC<MapViewProps> = ({ checkins, onMarkerClick, flyToLocatio
             <Marker key={checkin.id} position={[checkin.lat, checkin.lon]} icon={createIcon(checkin)}>
                 <Popup>
                     <div className="text-gray-900 p-1 w-56">
-                        <h3 className="font-bold text-lg mb-2 truncate">{checkin.nickname}</h3>
+                        <h3 className="font-bold text-lg mb-2 truncate flex items-center gap-2">
+                            <span>{checkin.nickname}</span>
+                            <VipStatusIcon profile={checkin.profiles} className="h-5 w-5 flex-shrink-0" />
+                        </h3>
                         {checkin.photo && <img src={checkin.photo} alt={checkin.nickname} className="rounded-md mb-2 max-h-40 w-full object-cover" />}
                         <p className="text-sm mb-2 break-words line-clamp-2">{checkin.description}</p>
                         <div className="flex items-center text-xs text-gray-500 gap-2">
