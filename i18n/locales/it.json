@@ -133,5 +133,17 @@
     "minute": "m",
     "minutes": "m",
     "justNow": "adesso"
+  },
+  "disclaimer": {
+    "title": "Avviso Importante – Contenuti per un Pubblico Adulto",
+    "intro": "Il sito che stai per visitare potrebbe contenere testi, immagini, descrizioni o riferimenti a situazioni di natura erotica, sensuale o comunque destinati a un pubblico maggiorenne. L’accesso è pertanto consentito esclusivamente a persone di età pari o superiore ai 18 anni (oppure all’età minima prevista dalle leggi vigenti nel Paese da cui si effettua l’accesso).",
+    "rules": "Questo portale non promuove comportamenti illegali, offensivi o non consenzienti. Tutti i contenuti eventualmente a carattere adulto hanno scopo informativo, educativo o di intrattenimento e sono rivolti a un pubblico consapevole e responsabile.",
+    "declarationTitle": "Accedendo, dichiari di:",
+    "declaration1": "avere almeno 18 anni (o la maggiore età prevista nel tuo Paese);",
+    "declaration2": "comprendere la natura dei contenuti presenti nel sito;",
+    "declaration3": "accettare che l’autore e i gestori del portale non siano responsabili per l’uso improprio o non conforme alle leggi dei materiali qui pubblicati;",
+    "declaration4": "accettare l’informativa sulla privacy e le condizioni d’uso del sito.",
+    "exit": "Se non desideri visualizzare materiali destinati a un pubblico adulto, ti invitiamo a lasciare immediatamente questa pagina.",
+    "acceptButton": "Accetto - Entra nel sito"
   }
 }

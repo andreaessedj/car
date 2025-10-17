@@ -15,6 +15,7 @@ import RecentUsersSlider from './components/RecentUsersSlider';
 import UserProfileModal from './components/UserProfileModal';
 import MessageModal from './components/MessageModal';
 import Guestbook from './components/Guestbook';
+import DisclaimerModal from './components/DisclaimerModal';
 import { useTranslation } from './i18n';
 import { generateFakeCheckin } from './services/fakeData';
 
@@ -25,6 +26,7 @@ const App: React.FC = () => {
     const [recentUsers, setRecentUsers] = useState<Profile[]>([]);
     const [onlineUsersCount, setOnlineUsersCount] = useState(0);
     const [isCurrentUserOnline, setIsCurrentUserOnline] = useState(false);
+    const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
 
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isCheckInModalOpen, setCheckInModalOpen] = useState(false);
@@ -38,6 +40,16 @@ const App: React.FC = () => {
     
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Profile[]>([]);
+
+    useEffect(() => {
+        const accepted = localStorage.getItem('disclaimerAccepted') === 'true';
+        setIsDisclaimerAccepted(accepted);
+    }, []);
+
+    const handleDisclaimerAccept = () => {
+        localStorage.setItem('disclaimerAccepted', 'true');
+        setIsDisclaimerAccepted(true);
+    };
 
     const fetchCheckins = useCallback(async () => {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -248,6 +260,7 @@ const App: React.FC = () => {
 
     return (
         <div className="relative h-screen w-screen bg-gray-900 overflow-hidden">
+            {!isDisclaimerAccepted && <DisclaimerModal onAccept={handleDisclaimerAccept} />}
             <Toaster position="top-center" toastOptions={{
                 style: { background: '#333', color: '#fff' }
             }} />

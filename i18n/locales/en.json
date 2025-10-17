@@ -133,5 +133,17 @@
     "minute": "m",
     "minutes": "m",
     "justNow": "just now"
+  },
+  "disclaimer": {
+    "title": "Important Notice – Adult Content",
+    "intro": "The site you are about to visit may contain text, images, descriptions, or references of an erotic, sensual, or otherwise adult nature. Access is therefore permitted only to persons aged 18 or over (or the minimum age required by the laws of the country from which you are accessing).",
+    "rules": "This portal does not promote illegal, offensive, or non-consensual behavior. All adult content is for informational, educational, or entertainment purposes and is intended for a conscious and responsible audience.",
+    "declarationTitle": "By accessing, you declare that you:",
+    "declaration1": "are at least 18 years old (or the age of majority in your country);",
+    "declaration2": "understand the nature of the content on the site;",
+    "declaration3": "accept that the author and operators of the portal are not responsible for the improper or unlawful use of the materials published here;",
+    "declaration4": "accept the privacy policy and terms of use of the site.",
+    "exit": "If you do not wish to view materials intended for an adult audience, please leave this page immediately.",
+    "acceptButton": "I Accept - Enter Site"
   }
 }
