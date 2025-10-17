@@ -67,7 +67,8 @@ const itTranslations = {
     "messagesLoadError": "Caricamento messaggi fallito.",
     "vipExtended": "Abbonamento VIP esteso con successo!",
     "vipExtensionFailed": "Impossibile estendere l'abbonamento VIP.",
-    "processing": "Elaborazione..."
+    "processing": "Elaborazione...",
+    "messageLimitReached": "Hai raggiunto il limite giornaliero di 30 messaggi privati. Gli utenti VIP hanno messaggi illimitati."
   },
   "checkinDetail": {
     "notAvailable": "N/D",
@@ -173,6 +174,13 @@ const itTranslations = {
   "vip": {
     "active": "Utente VIP",
     "expired": "VIP Scaduto"
+  },
+  "vipOnlyFilter": "Solo VIP",
+  "header": {
+    "becomeVip": "Diventa VIP",
+    "isVip": "Utente VIP",
+    "becomeVipComingSoon": "Diventa VIP (Presto disp.)",
+    "comingSoonTitle": "Funzionalità in arrivo"
   }
 };
 

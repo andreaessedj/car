@@ -95,6 +95,8 @@ export type Profile = {
   created_at?: string;
   is_vip: boolean;
   vip_until: string | null;
+  last_message_sent_at: string | null;
+  messages_sent_today: number | null;
 };
 
 export type Message = {
@@ -114,4 +116,5 @@ export type Session = SupabaseSession;
 export interface FilterState {
     gender: string;
     city: string;
+    vipOnly: boolean;
 }

@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { XMarkIcon, PaperAirplaneIcon } from './icons';
 import { useTranslation } from '../i18n';
 import type { Profile } from '../types';
+import { isVipActive } from '../utils/vip';
 
 interface MessageModalProps {
     recipient: Profile;
@@ -13,13 +14,28 @@ interface MessageModalProps {
 
 const MessageModal: React.FC<MessageModalProps> = ({ recipient, onClose }) => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim() || !user) return;
+
+        // Check message limit for non-VIPs
+        if (!isVipActive(profile)) {
+            const DAILY_LIMIT = 30;
+            const lastSentAt = profile?.last_message_sent_at;
+            const messagesSentToday = profile?.messages_sent_today || 0;
+
+            const isNewDay = !lastSentAt || new Date(lastSentAt).toDateString() !== new Date().toDateString();
+
+            if (!isNewDay && messagesSentToday >= DAILY_LIMIT) {
+                toast.error(t('toasts.messageLimitReached'));
+                return;
+            }
+        }
+
         setLoading(true);
 
         const sendMessagePromise = supabase.from('messages').insert({
@@ -29,6 +45,13 @@ const MessageModal: React.FC<MessageModalProps> = ({ recipient, onClose }) => {
             is_read: false,
         }).then(({ error }) => {
             if (error) throw error;
+            // Manually update profile state for immediate feedback
+             if (profile && !isVipActive(profile)) {
+                const lastSentAt = profile?.last_message_sent_at;
+                const isNewDay = !lastSentAt || new Date(lastSentAt).toDateString() !== new Date().toDateString();
+                profile.messages_sent_today = isNewDay ? 1 : (profile.messages_sent_today || 0) + 1;
+                profile.last_message_sent_at = new Date().toISOString();
+            }
         });
 
         toast.promise(

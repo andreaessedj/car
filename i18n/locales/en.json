@@ -63,7 +63,8 @@
     "messagesLoadError": "Failed to load messages.",
     "vipExtended": "VIP membership extended successfully!",
     "vipExtensionFailed": "Failed to extend VIP membership.",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "messageLimitReached": "You have reached your daily limit of 30 private messages. VIP users have unlimited messages."
   },
   "checkinDetail": {
     "notAvailable": "N/A",
@@ -169,5 +170,12 @@
   "vip": {
     "active": "VIP User",
     "expired": "VIP Expired"
+  },
+  "vipOnlyFilter": "VIP Only",
+  "header": {
+    "becomeVip": "Become VIP",
+    "isVip": "VIP User",
+    "becomeVipComingSoon": "Become VIP (Coming Soon)",
+    "comingSoonTitle": "Feature coming soon"
   }
 }

@@ -19,6 +19,7 @@ import DisclaimerModal from './components/DisclaimerModal';
 import { useTranslation } from './i18n';
 import { generateFakeCheckin } from './services/fakeData';
 import VipPromoModal from './components/VipPromoModal';
+import { isVipActive } from './utils/vip';
 
 // Cookie helper functions
 const setCookie = (name: string, value: string, days: number) => {
@@ -59,7 +60,7 @@ const App: React.FC = () => {
     const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
     const [messageRecipient, setMessageRecipient] = useState<Profile | null>(null);
 
-    const [filters, setFilters] = useState<FilterState>({ gender: 'All', city: 'All' });
+    const [filters, setFilters] = useState<FilterState>({ gender: 'All', city: 'All', vipOnly: false });
     const [flyToLocation, setFlyToLocation] = useState<[number, number] | null>(null);
     
     const [searchQuery, setSearchQuery] = useState('');
@@ -283,7 +284,8 @@ const App: React.FC = () => {
         return checkins.filter(c => {
             const genderMatch = filters.gender === 'All' || c.gender === filters.gender || (filters.gender === 'Coppia' && c.status === 'Coppia');
             const cityMatch = filters.city === 'All' || c.city === filters.city;
-            return genderMatch && cityMatch;
+            const vipMatch = !filters.vipOnly || isVipActive(c.profiles);
+            return genderMatch && cityMatch && vipMatch;
         });
     }, [checkins, filters]);
     

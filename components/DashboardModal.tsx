@@ -254,6 +254,21 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessageContent.trim() || !selectedConversation || !user) return;
+
+        // Check message limit for non-VIPs
+        if (!isVipActive(profile)) {
+            const DAILY_LIMIT = 30;
+            const lastSentAt = profile?.last_message_sent_at;
+            const messagesSentToday = profile?.messages_sent_today || 0;
+
+            const isNewDay = !lastSentAt || new Date(lastSentAt).toDateString() !== new Date().toDateString();
+
+            if (!isNewDay && messagesSentToday >= DAILY_LIMIT) {
+                toast.error(t('toasts.messageLimitReached'));
+                return;
+            }
+        }
+
         setIsSending(true);
         const { error } = await supabase.from('messages').insert({
             sender_id: user.id,
@@ -265,6 +280,13 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
             toast.error(t('messageModal.error'));
         } else {
             setNewMessageContent('');
+            // Manually update profile state for immediate feedback
+            if (profile && !isVipActive(profile)) {
+                const lastSentAt = profile?.last_message_sent_at;
+                const isNewDay = !lastSentAt || new Date(lastSentAt).toDateString() !== new Date().toDateString();
+                profile.messages_sent_today = isNewDay ? 1 : (profile.messages_sent_today || 0) + 1;
+                profile.last_message_sent_at = new Date().toISOString();
+            }
             await fetchMessages();
         }
         setIsSending(false);

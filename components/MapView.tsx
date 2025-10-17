@@ -10,34 +10,39 @@ import { isVipActive } from '../utils/vip';
 
 
 const createIcon = (checkin: Checkin) => {
+    const isVip = isVipActive(checkin.profiles);
     let color = '#a1a1aa'; // Default zinc
-    let IconComponent = <MapPinIcon color={color} />;
+    let IconComponent;
     
     if (checkin.status === 'Coppia') {
         color = '#f59e0b'; // amber
-        IconComponent = <CoupleIcon color={color}/>;
+        IconComponent = <CoupleIcon color={isVip ? '#facc15' : color}/>;
     } else {
         switch (checkin.gender) {
             case 'M':
                 color = '#2563eb'; // blue
-                IconComponent = <MaleIcon color={color} />;
+                IconComponent = <MaleIcon color={isVip ? '#facc15' : color} />;
                 break;
             case 'F':
                 color = '#db2777'; // pink
-                IconComponent = <FemaleIcon color={color} />;
+                IconComponent = <FemaleIcon color={isVip ? '#facc15' : color} />;
                 break;
             case 'Trav':
             case 'Trans':
                 color = '#9333ea'; // purple
-                IconComponent = <TransgenderIcon color={color} />;
+                IconComponent = <TransgenderIcon color={isVip ? '#facc15' : color} />;
+                break;
+            default:
+                IconComponent = <MapPinIcon color={isVip ? '#facc15' : color} />;
                 break;
         }
     }
     
-    const ringClass = isVipActive(checkin.profiles) ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : '';
+    const vipClasses = isVip ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50 animate-bounce-short' : '';
+    const backgroundClass = isVip ? 'bg-gray-900' : 'bg-gray-800 bg-opacity-70';
 
     const iconHtml = `
-      <div class="w-8 h-8 p-1 bg-gray-800 bg-opacity-70 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm ${ringClass}">
+      <div class="w-8 h-8 p-1 ${backgroundClass} rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm ${vipClasses}">
         ${ReactDOMServer.renderToString(IconComponent)}
       </div>
     `;

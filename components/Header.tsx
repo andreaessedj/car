@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { GENDERS } from '../constants';
 import { FilterState, Profile } from '../types';
-import { UserCircleIcon, UsersIcon, MagnifyingGlassIcon } from './icons';
+import { UserCircleIcon, UsersIcon, MagnifyingGlassIcon, SparklesIcon } from './icons';
 import { useTranslation } from '../i18n';
 import VipStatusIcon from './VipStatusIcon';
+import { isVipActive } from '../utils/vip';
 
 interface HeaderProps {
     onCheckInClick: () => void;
@@ -29,6 +30,7 @@ const Header: React.FC<HeaderProps> = ({
     const { user, signOut, profile } = useAuth();
     const { t } = useTranslation();
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const isVip = isVipActive(profile);
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -83,6 +85,23 @@ const Header: React.FC<HeaderProps> = ({
                 <select name="city" title={t('filterCity')} value={filters.city} onChange={handleFilterChange} className="bg-gray-700 text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
                     {cityOptions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
+
+                {/* VIP Filter Toggle */}
+                {isVip && (
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-yellow-400">{t('vipOnlyFilter')}</span>
+                        <label htmlFor="vip-toggle" className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                id="vip-toggle" 
+                                className="sr-only peer"
+                                checked={filters.vipOnly}
+                                onChange={(e) => setFilters(prev => ({...prev, vipOnly: e.target.checked}))}
+                            />
+                            <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-yellow-400 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                        </label>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -108,6 +127,23 @@ const Header: React.FC<HeaderProps> = ({
                                 <UserCircleIcon className="h-6 w-6"/>
                              )}
                         </button>
+                        
+                        {isVip ? (
+                             <div className="flex items-center gap-1.5 bg-yellow-500/20 text-yellow-300 font-bold py-2 px-4 rounded-md text-sm">
+                                <VipStatusIcon profile={profile} className="h-5 w-5" />
+                                <span>{t('header.isVip')}</span>
+                            </div>
+                        ) : (
+                            <button
+                                disabled
+                                title={t('header.comingSoonTitle')}
+                                className="bg-amber-500 text-white font-bold py-2 px-4 rounded-md text-sm flex items-center gap-2 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                            >
+                                <SparklesIcon className="h-5 w-5" />
+                                {t('header.becomeVipComingSoon')}
+                            </button>
+                        )}
+
                         <button onClick={signOut} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 text-sm">
                             {t('logout')}
                         </button>
