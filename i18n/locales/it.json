@@ -27,7 +27,14 @@
     "loginSuccess": "Login effettuato con successo!",
     "registerSuccess": "Registrazione completata! Controlla la tua email per confermare.",
     "userExists": "Esiste già un utente con questa email.",
-    "displayNameRequired": "Il nome visualizzato è obbligatorio."
+    "displayNameRequired": "Il nome visualizzato è obbligatorio.",
+    "forgotPassword": "Password dimenticata?",
+    "resetPasswordTitle": "Reimposta Password",
+    "resetPasswordInstructions": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
+    "sendResetLink": "Invia Link di Reset",
+    "backToLogin": "Torna al Login",
+    "resetSuccess": "Email per il reset della password inviata! Controlla la tua casella di posta.",
+    "resetError": "Impossibile inviare l'email per il reset della password."
   },
   "checkinModal": {
     "title": "Crea Nuovo Check-in",

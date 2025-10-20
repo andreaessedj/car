@@ -27,7 +27,14 @@
     "loginSuccess": "Logged in successfully!",
     "registerSuccess": "Registration successful! Please check your email to confirm.",
     "userExists": "A user with this email already exists.",
-    "displayNameRequired": "Display name is required."
+    "displayNameRequired": "Display name is required.",
+    "forgotPassword": "Forgot Password?",
+    "resetPasswordTitle": "Reset Password",
+    "resetPasswordInstructions": "Enter your email and we'll send you a link to reset your password.",
+    "sendResetLink": "Send Reset Link",
+    "backToLogin": "Back to Login",
+    "resetSuccess": "Password reset email sent! Check your inbox.",
+    "resetError": "Failed to send password reset email."
   },
   "checkinModal": {
     "title": "Create New Check-in",

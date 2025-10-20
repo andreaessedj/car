@@ -10,7 +10,7 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const { t } = useTranslation();
-    const [isLogin, setIsLogin] = useState(true);
+    const [view, setView] = useState<'login' | 'register' | 'forgotPassword'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
@@ -20,7 +20,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         e.preventDefault();
         setLoading(true);
 
-        if (isLogin) {
+        if (view === 'login') {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 toast.error(error.message);
@@ -28,7 +28,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                 toast.success(t('auth.loginSuccess'));
                 onClose();
             }
-        } else {
+        } else if (view === 'register') {
             if (displayName.trim() === '') {
                 toast.error(t('auth.displayNameRequired'));
                 setLoading(false);
@@ -51,25 +51,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             }
              else {
                 toast.success(t('auth.registerSuccess'));
-                if (data.user) {
-                    // Invoke the edge function to send an email notification, but don't block UI on it
-                    supabase.functions.invoke('send-new-user-email', {
-                        body: { 
-                            email: data.user.email, 
-                            displayName: displayName.trim() 
-                        },
-                    }).then(({ error: functionError }) => {
-                        if (functionError) {
-                            // Log the error for debugging, but don't show a toast to the user
-                            console.error('Failed to send new user notification email:', functionError);
-                        }
-                    });
-                }
                 onClose();
             }
         }
         setLoading(false);
     };
+
+    const handlePasswordReset = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin,
+        });
+
+        if (error) {
+            toast.error(t('auth.resetError'));
+        } else {
+            toast.success(t('auth.resetSuccess'));
+            setView('login');
+        }
+        setLoading(false);
+    };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -78,32 +81,62 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     <XMarkIcon className="h-6 w-6" />
                 </button>
 
-                <div className="flex border-b border-gray-600 mb-4">
-                    <button onClick={() => setIsLogin(true)} className={`flex-1 py-2 text-center font-semibold ${isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}>{t('auth.login')}</button>
-                    <button onClick={() => setIsLogin(false)} className={`flex-1 py-2 text-center font-semibold ${!isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}>{t('auth.register')}</button>
-                </div>
-
-                <h2 className="text-2xl font-bold text-white mb-4">{isLogin ? t('auth.welcomeBack') : t('auth.createAccount')}</h2>
-
-                <form onSubmit={handleAuth}>
-                    {!isLogin && (
-                        <div className="mb-4">
-                            <label className="block text-gray-300 mb-1">{t('auth.displayName')}</label>
-                            <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
+                {view !== 'forgotPassword' ? (
+                    <>
+                        <div className="flex border-b border-gray-600 mb-4">
+                            <button onClick={() => setView('login')} className={`flex-1 py-2 text-center font-semibold ${view === 'login' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}>{t('auth.login')}</button>
+                            <button onClick={() => setView('register')} className={`flex-1 py-2 text-center font-semibold ${view === 'register' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}>{t('auth.register')}</button>
                         </div>
-                    )}
-                    <div className="mb-4">
-                        <label className="block text-gray-300 mb-1">{t('auth.email')}</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
-                    </div>
-                    <div className="mb-6">
-                        <label className="block text-gray-300 mb-1">{t('auth.password')}</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
-                    </div>
-                    <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-md transition duration-300 disabled:bg-gray-500">
-                        {loading ? t('auth.processing') : (isLogin ? t('auth.login') : t('auth.register'))}
-                    </button>
-                </form>
+
+                        <h2 className="text-2xl font-bold text-white mb-4">{view === 'login' ? t('auth.welcomeBack') : t('auth.createAccount')}</h2>
+
+                        <form onSubmit={handleAuth}>
+                            {view === 'register' && (
+                                <div className="mb-4">
+                                    <label className="block text-gray-300 mb-1">{t('auth.displayName')}</label>
+                                    <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
+                                </div>
+                            )}
+                            <div className="mb-4">
+                                <label className="block text-gray-300 mb-1">{t('auth.email')}</label>
+                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-300 mb-1">{t('auth.password')}</label>
+                                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
+                            </div>
+                            {view === 'login' && (
+                                <div className="text-right -mt-2 mb-4">
+                                    <button type="button" onClick={() => setView('forgotPassword')} className="text-sm text-red-400 hover:underline">
+                                        {t('auth.forgotPassword')}
+                                    </button>
+                                </div>
+                            )}
+                            <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-md transition duration-300 disabled:bg-gray-500">
+                                {loading ? t('auth.processing') : (view === 'login' ? t('auth.login') : t('auth.register'))}
+                            </button>
+                        </form>
+                    </>
+                ) : (
+                    <>
+                        <h2 className="text-2xl font-bold text-white mb-4">{t('auth.resetPasswordTitle')}</h2>
+                        <p className="text-gray-300 mb-4">{t('auth.resetPasswordInstructions')}</p>
+                        <form onSubmit={handlePasswordReset}>
+                             <div className="mb-4">
+                                <label className="block text-gray-300 mb-1">{t('auth.email')}</label>
+                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
+                            </div>
+                            <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-md transition duration-300 disabled:bg-gray-500">
+                                {loading ? t('auth.processing') : t('auth.sendResetLink')}
+                            </button>
+                        </form>
+                         <div className="text-center mt-4">
+                            <button type="button" onClick={() => setView('login')} className="text-sm text-red-400 hover:underline">
+                                {t('auth.backToLogin')}
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
