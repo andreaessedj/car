@@ -51,6 +51,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             }
              else {
                 toast.success(t('auth.registerSuccess'));
+                if (data.user) {
+                    // Invoke the edge function to send an email notification, but don't block UI on it
+                    supabase.functions.invoke('send-new-user-email', {
+                        body: { 
+                            email: data.user.email, 
+                            displayName: displayName.trim() 
+                        },
+                    }).then(({ error: functionError }) => {
+                        if (functionError) {
+                            // Log the error for debugging, but don't show a toast to the user
+                            console.error('Failed to send new user notification email:', functionError);
+                        }
+                    });
+                }
                 onClose();
             }
         }
