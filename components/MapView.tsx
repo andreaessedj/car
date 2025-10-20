@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import type { Checkin } from '../types';
 import { MapPinIcon, UserIcon, MaleIcon, FemaleIcon, TransgenderIcon, CoupleIcon, ArrowTopRightOnSquareIcon } from './icons';
@@ -121,11 +121,12 @@ const MapView: React.FC<MapViewProps> = ({ checkins, onMarkerClick, flyToLocatio
     }, [checkins, onMarkerClick, t]);
 
     return (
-        <MapContainer center={[41.902782, 12.496366]} zoom={6} scrollWheelZoom={true} className="h-full w-full z-0">
+        <MapContainer center={[41.902782, 12.496366]} zoom={6} scrollWheelZoom={true} className="h-full w-full z-0" zoomControl={false}>
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
+            <ZoomControl position="bottomleft" />
             {memoizedMarkers}
             <FlyToController location={flyToLocation} />
         </MapContainer>
