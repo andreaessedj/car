@@ -44,14 +44,14 @@ const getCookie = (name: string): string | null => {
 };
 
 const App: React.FC = () => {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const { t } = useTranslation();
     const [checkins, setCheckins] = useState<Checkin[]>([]);
     const [recentUsers, setRecentUsers] = useState<Profile[]>([]);
     const [onlineUsersCount, setOnlineUsersCount] = useState(0);
     const [isCurrentUserOnline, setIsCurrentUserOnline] = useState(false);
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
-    const [isVipPromoModalOpen, setVipPromoModalOpen] = useState(false);
+    const [isVipPromoModalOpen, setIsVipPromoModalOpen] = useState(false);
 
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isCheckInModalOpen, setCheckInModalOpen] = useState(false);
@@ -71,14 +71,19 @@ const App: React.FC = () => {
         setIsDisclaimerAccepted(accepted);
     }, []);
 
-    // Effect for VIP promo modal
     useEffect(() => {
+        if (isVipActive(profile) || sessionStorage.getItem('vipPromoSeen')) {
+            return;
+        }
+    
         const timer = setTimeout(() => {
-            setVipPromoModalOpen(true);
-        }, 5000); // 5 seconds
+            setIsVipPromoModalOpen(true);
+            sessionStorage.setItem('vipPromoSeen', 'true');
+        }, 45000); // show after 45 seconds
+    
+        return () => clearTimeout(timer);
+    }, [profile]);
 
-        return () => clearTimeout(timer); // Cleanup on unmount
-    }, []);
 
     const handleDisclaimerAccept = () => {
         setCookie('disclaimerAccepted', 'true', 365); // Set cookie for 1 year
@@ -295,6 +300,19 @@ const App: React.FC = () => {
         return [{ value: 'All', label: 'All Cities' }, ...options];
     }, [checkins]);
 
+    const sortedRecentUsers = useMemo(() => {
+        return [...recentUsers].sort((a, b) => {
+            const aIsVip = isVipActive(a);
+            const bIsVip = isVipActive(b);
+            if (aIsVip && !bIsVip) return -1;
+            if (!aIsVip && bIsVip) return 1;
+            if (a.created_at && b.created_at) {
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            }
+            return 0;
+        });
+    }, [recentUsers]);
+
     const handleRecentCheckinClick = (checkin: Checkin) => {
         setFlyToLocation([checkin.lat, checkin.lon]);
         setTimeout(() => setSelectedCheckin(checkin), 1500);
@@ -330,6 +348,7 @@ const App: React.FC = () => {
                 onCheckInClick={handleCheckInClick}
                 onAuthClick={() => setAuthModalOpen(true)}
                 onDashboardClick={() => setDashboardModalOpen(true)}
+                onBecomeVipClick={() => toast.success(t('header.comingSoonTitle'))}
                 filters={filters}
                 setFilters={setFilters}
                 cityOptions={cityOptions}
@@ -363,7 +382,7 @@ const App: React.FC = () => {
                     <div className="w-full md:w-[30rem] lg:w-[40rem]">
                         <h3 className="text-white font-semibold mb-2 ml-1 text-sm drop-shadow-lg">{t('recentUsers.title')}</h3>
                         <RecentUsersSlider 
-                            users={recentUsers} 
+                            users={sortedRecentUsers} 
                             onUserClick={handleRecentUserClick} 
                         />
                     </div>
@@ -376,7 +395,7 @@ const App: React.FC = () => {
             {selectedCheckin && <CheckinDetailModal checkin={selectedCheckin} onClose={() => setSelectedCheckin(null)} />}
             {selectedProfile && <UserProfileModal profile={selectedProfile} onClose={() => setSelectedProfile(null)} onSendMessage={handleSendMessage} />}
             {messageRecipient && <MessageModal recipient={messageRecipient} onClose={() => setMessageRecipient(null)} />}
-            {isVipPromoModalOpen && <VipPromoModal onClose={() => setVipPromoModalOpen(false)} />}
+            {isVipPromoModalOpen && <VipPromoModal onClose={() => setIsVipPromoModalOpen(false)} />}
         </div>
     );
 };

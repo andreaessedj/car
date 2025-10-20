@@ -175,11 +175,7 @@ const itTranslations = {
     "feature2": "Boost profilo",
     "feature3": "Messaggi prioritari",
     "feature4": "Filtri avanzati",
-    "feature5": "Invisibilità",
-    "footer": "Naviga giornalmente e provalo per primo!",
-    "priceIntro": "Al costo speciale di lancio di",
-    "price": "1€",
-    "pricePerMonth": "al mese"
+    "footer": "Naviga giornalmente e provalo per primo!"
   },
   "vip": {
     "active": "Utente VIP",

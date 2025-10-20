@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
-import { XMarkIcon, UserCircleIcon, PaperAirplaneIcon, ArrowLeftIcon, CalendarDaysIcon, SparklesIcon } from './icons';
+import { XMarkIcon, UserCircleIcon, PaperAirplaneIcon, ArrowLeftIcon, CalendarDaysIcon, SparklesIcon, VipIcon } from './icons';
 import { useTranslation } from '../i18n';
 import type { Message, Profile } from '../types';
 import VipStatusIcon from './VipStatusIcon';
@@ -215,31 +215,6 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
         });
     };
 
-    const handleExtendVip = async () => {
-        if (!user || !profile) return;
-        
-        const currentExpiry = profile.vip_until ? new Date(profile.vip_until) : new Date();
-        const now = new Date();
-        // Extend from the current expiry date if it's in the future, otherwise extend from today
-        const startDate = currentExpiry > now ? currentExpiry : now;
-        const newExpiry = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-        const extendPromise = supabase.from('profiles').update({
-            is_vip: true,
-            vip_until: newExpiry.toISOString()
-        }).eq('id', user.id).then(async ({ error }) => {
-            if (error) throw error;
-            await refreshProfile();
-        });
-
-        toast.promise(extendPromise, {
-            loading: t('toasts.processing'),
-            success: t('toasts.vipExtended'),
-            error: t('toasts.vipExtensionFailed')
-        });
-    };
-
-
     const handleSelectConversation = async (conv: Conversation) => {
         setSelectedConversation(conv);
         if (conv.unreadCount > 0) {
@@ -316,9 +291,9 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
                     )}
                     
                      <button
-                        onClick={handleExtendVip}
-                        disabled
-                        className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-md transition duration-300 flex items-center gap-2 text-sm disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        onClick={() => toast.success(t('header.comingSoonTitle'))}
+                        title={t('header.comingSoonTitle')}
+                        className="bg-yellow-800 text-yellow-500/70 font-bold py-2 px-4 rounded-md transition duration-300 flex items-center gap-2 text-sm cursor-not-allowed"
                     >
                         <SparklesIcon className="h-5 w-5" />
                         {t('dashboard.extendVipComingSoon')}
@@ -409,7 +384,7 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
                        <div className="flex h-full flex-col md:flex-row">
                            <div className={`w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-700 overflow-y-auto ${selectedConversation ? 'hidden md:block' : ''}`}>
                                {conversations.length > 0 ? conversations.map(conv => (
-                                   <div key={conv.otherUser.id} onClick={() => handleSelectConversation(conv)} className={`p-4 cursor-pointer flex items-center gap-3 ${selectedConversation?.otherUser.id === conv.otherUser.id ? 'bg-gray-700' : 'hover:bg-gray-700/50'}`}>
+                                   <div key={conv.otherUser.id} onClick={() => handleSelectConversation(conv)} className={`p-4 cursor-pointer flex items-center gap-3 transition-colors ${selectedConversation?.otherUser.id === conv.otherUser.id ? 'bg-gray-700' : 'hover:bg-gray-700/50'} ${isVipActive(conv.otherUser) ? 'border-l-4 border-yellow-400' : 'border-l-4 border-transparent'}`}>
                                        {conv.otherUser.avatar_url ? (
                                            <img src={conv.otherUser.avatar_url} alt={conv.otherUser.display_name} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
                                        ) : (
@@ -447,7 +422,10 @@ const DashboardModal: React.FC<DashboardModalProps> = ({ onClose }) => {
                                             <div key={msg.id} className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                                                 <div className={`max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg ${msg.sender_id === user?.id ? 'bg-red-600 text-white' : 'bg-gray-600 text-gray-200'}`}>
                                                     <p className="whitespace-pre-wrap">{msg.content}</p>
-                                                    <p className="text-xs text-right mt-1 opacity-70">{formatMessageTimestamp(msg.created_at)}</p>
+                                                     <div className="flex items-center justify-end text-xs mt-1 opacity-70">
+                                                        {msg.sender_id !== user?.id && isVipActive(selectedConversation.otherUser) && <VipIcon className="h-3 w-3 mr-1 text-yellow-300" />}
+                                                        <span>{formatMessageTimestamp(msg.created_at)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}

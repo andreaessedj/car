@@ -171,11 +171,7 @@
     "feature2": "Profile boost",
     "feature3": "Priority messages",
     "feature4": "Advanced filters",
-    "feature5": "Invisibility mode",
-    "footer": "Browse daily and be the first to try it!",
-    "priceIntro": "At the special launch price of",
-    "price": "€1",
-    "pricePerMonth": "per month"
+    "footer": "Browse daily and be the first to try it!"
   },
   "vip": {
     "active": "VIP User",

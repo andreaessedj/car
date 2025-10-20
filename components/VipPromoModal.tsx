@@ -14,7 +14,6 @@ const VipPromoModal: React.FC<VipPromoModalProps> = ({ onClose }) => {
         'feature2',
         'feature3',
         'feature4',
-        'feature5',
     ];
 
     return (
@@ -40,16 +39,9 @@ const VipPromoModal: React.FC<VipPromoModalProps> = ({ onClose }) => {
                     ))}
                 </ul>
 
-                <div className="text-center my-6 p-4 bg-gray-900/50 rounded-lg border-2 border-dashed border-yellow-400 animate-pulse">
-                    <p className="text-lg text-white">{t('vipPromo.priceIntro')}</p>
-                    <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 mt-1">
-                        {t('vipPromo.price')}
-                    </p>
-                    <p className="text-sm text-gray-400">{t('vipPromo.pricePerMonth')}</p>
+                <div className="text-center mt-8 p-4 bg-gray-900/50 rounded-lg">
+                    <p className="text-lg text-white font-semibold">{t('vipPromo.footer')}</p>
                 </div>
-                
-                <p className="text-center text-amber-400 font-semibold">{t('vipPromo.footer')}</p>
-
             </div>
              <style>{`
                 @keyframes fade-in {

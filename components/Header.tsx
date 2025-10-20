@@ -11,6 +11,7 @@ interface HeaderProps {
     onCheckInClick: () => void;
     onAuthClick: () => void;
     onDashboardClick: () => void;
+    onBecomeVipClick: () => void;
     filters: FilterState;
     setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
     cityOptions: { value: string; label: string }[];
@@ -23,7 +24,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-    onCheckInClick, onAuthClick, onDashboardClick, filters, setFilters, 
+    onCheckInClick, onAuthClick, onDashboardClick, onBecomeVipClick, filters, setFilters, 
     cityOptions, onlineUsersCount, isCurrentUserOnline, searchQuery, setSearchQuery, 
     searchResults, onUserSearchSelect 
 }) => {
@@ -135,9 +136,9 @@ const Header: React.FC<HeaderProps> = ({
                             </div>
                         ) : (
                             <button
-                                disabled
+                                onClick={onBecomeVipClick}
                                 title={t('header.comingSoonTitle')}
-                                className="bg-amber-500 text-white font-bold py-2 px-4 rounded-md text-sm flex items-center gap-2 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                className="bg-amber-800 text-amber-500/70 font-bold py-2 px-4 rounded-md text-sm flex items-center gap-2 transition-colors cursor-not-allowed"
                             >
                                 <SparklesIcon className="h-5 w-5" />
                                 {t('header.becomeVipComingSoon')}
