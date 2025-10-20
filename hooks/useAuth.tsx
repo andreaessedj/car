@@ -20,12 +20,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
 
     const fetchProfile = useCallback(async (userId: string) => {
-        const { data: userProfile } = await supabase
+        const { data: userProfile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', userId)
             .single();
-        setProfile(userProfile);
+
+        if (error) {
+            console.error('Error fetching profile:', error.message);
+            setProfile(null);
+        } else {
+            setProfile(userProfile);
+        }
     }, []);
 
     const refreshProfile = useCallback(async () => {
@@ -36,13 +42,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await fetchProfile(session.user.id);
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                
+                const currentSession = data.session;
+                setSession(currentSession);
+                setUser(currentSession?.user ?? null);
+                if (currentSession?.user) {
+                    await fetchProfile(currentSession.user.id);
+                }
+            } catch (error) {
+                console.error("Error getting session:", error);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         getSession();
@@ -53,8 +67,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setUser(session?.user ?? null);
                 if (session?.user) {
                     setLoading(true);
-                     await fetchProfile(session.user.id);
-                    setLoading(false);
+                     try {
+                        await fetchProfile(session.user.id);
+                     } finally {
+                        setLoading(false);
+                     }
                 } else {
                     setProfile(null);
                 }
