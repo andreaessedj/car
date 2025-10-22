@@ -75,3 +75,70 @@ export const TermsOfServiceContent = () => (
         <p className="mb-4">Potremmo modificare questi Termini di volta in volta. La versione più recente sarà sempre disponibile sulla Piattaforma. L'uso continuato del Servizio dopo una modifica costituisce accettazione dei nuovi Termini.</p>
     </>
 );
+
+export const RulesContent = () => (
+    <>
+        <p className="mb-4">Ultimo aggiornamento: Luglio 2024</p>
+        
+        <h3 className="text-xl font-semibold text-white mb-2">Introduzione</h3>
+        <p className="mb-4">Benvenuto su ADULT-MEET. Questa pagina illustra il funzionamento della nostra piattaforma e le regole da seguire per garantire un'esperienza sicura e piacevole per tutti. ADULT-MEET è un luogo d'incontro per un pubblico adulto e consapevole, basato su check-in geografici in tempo reale.</p>
+
+        <h3 className="text-xl font-semibold text-white mb-2">Come Funziona il Sito</h3>
+        <ul className="list-disc list-inside mb-4 space-y-3">
+            <li>
+                <strong>La Mappa:</strong> Il cuore della piattaforma è la mappa interattiva. Qui puoi visualizzare i "check-in" degli altri utenti, che rappresentano la loro presenza in una determinata area. Ogni check-in rimane visibile per 24 ore, garantendo che le informazioni siano sempre aggiornate.
+            </li>
+            <li>
+                <strong>Il Check-in:</strong> Puoi segnalare la tua presenza creando un check-in. Puoi farlo come utente anonimo o registrato. Dovrai fornire un nickname, una breve descrizione di cosa cerchi, e posizionare un puntatore sulla mappa. Puoi anche aggiungere una foto (opzionale).
+            </li>
+            <li>
+                <strong>Profili Utente:</strong> La registrazione è gratuita e ti permette di avere un profilo persistente con foto (avatar), biografia e altre informazioni. I check-in effettuati da utente registrato saranno collegati al tuo profilo.
+            </li>
+            <li>
+                <strong>Interazione:</strong> Puoi interagire con gli altri in diversi modi: cliccando su un pin per vedere i dettagli, lasciando commenti pubblici sotto un check-in, o inviando messaggi privati agli utenti registrati.
+            </li>
+             <li>
+                <strong>Guestbook:</strong> È una bacheca pubblica dove chiunque può lasciare un messaggio per l'intera community del sito.
+            </li>
+        </ul>
+
+        <h3 className="text-xl font-semibold text-white mb-2">Utenti Standard vs. Utenti VIP</h3>
+        <p className="mb-4">Offriamo due livelli di utenza per personalizzare la tua esperienza:</p>
+        
+        <div className="mb-4 p-4 bg-gray-700/50 rounded-lg">
+            <h4 className="text-lg font-bold text-white mb-2">👤 Utente Standard (Gratuito)</h4>
+            <ul className="list-disc list-inside space-y-2">
+                <li>Creare un account e personalizzare il proprio profilo.</li>
+                <li>Effettuare check-in sulla mappa (sia da registrato che da anonimo).</li>
+                <li>Visualizzare tutti i check-in e i profili degli altri utenti.</li>
+                <li>Lasciare commenti pubblici sui check-in.</li>
+                <li>Utilizzare il Guestbook.</li>
+                <li><strong>Limitazione:</strong> È possibile inviare un massimo di <strong>30 messaggi privati al giorno</strong>.</li>
+            </ul>
+        </div>
+        
+        <div className="p-4 bg-yellow-900/30 border border-yellow-400/50 rounded-lg">
+             <h4 className="text-lg font-bold text-yellow-300 mb-2">⭐ Utente VIP (Prossimamente)</h4>
+            <p className="mb-2">L'utente VIP ha accesso a vantaggi esclusivi pensati per massimizzare la visibilità e le possibilità di interazione:</p>
+            <ul className="list-disc list-inside space-y-2">
+                <li>Tutti i vantaggi dell'utente Standard.</li>
+                <li><strong>Messaggi Privati Illimitati:</strong> Nessun limite giornaliero all'invio di messaggi.</li>
+                <li><strong>Check-in in Evidenza:</strong> I tuoi pin sulla mappa avranno una grafica speciale (un anello dorato animato) per risaltare e attrarre più attenzione.</li>
+                <li><strong>Profilo in Evidenza:</strong> Il tuo profilo apparirà in cima alle liste, come quella degli "Ultimi Utenti".</li>
+                <li><strong>Filtri Avanzati:</strong> Potrai filtrare la mappa per visualizzare esclusivamente i check-in degli altri utenti VIP.</li>
+                <li><strong>Badge VIP Esclusivo:</strong> Un'icona a forma di stella dorata apparirà accanto al tuo nome in ogni sezione del sito (profilo, check-in, messaggi, guestbook).</li>
+            </ul>
+        </div>
+
+        <h3 className="text-xl font-semibold text-white mt-4 mb-2">Regole Generali di Comportamento</h3>
+        <p className="mb-2">Per mantenere un ambiente rispettoso, tutti gli utenti devono attenersi alle seguenti regole:</p>
+        <ul className="list-disc list-inside mb-4 space-y-2">
+            <li><strong>Età Minima:</strong> È severamente vietato l'accesso ai minori di 18 anni.</li>
+            <li><strong>Rispetto Reciproco:</strong> Non sono tollerati insulti, molestie, discorsi d'odio, minacce o qualsiasi forma di comportamento aggressivo.</li>
+            <li><strong>Contenuti Vietati:</strong> È vietato pubblicare contenuti illegali, pornografici, violenti, o che violino i diritti d'autore.</li>
+            <li><strong>Privacy:</strong> Non condividere informazioni private di altre persone senza il loro esplicito consenso.</li>
+            <li><strong>Uso Corretto:</strong> Non utilizzare la piattaforma per spam, phishing, o attività commerciali non autorizzate.</li>
+        </ul>
+        <p>La violazione di queste regole comporterà la rimozione dei contenuti e, nei casi più gravi, la sospensione o il ban permanente dell'account.</p>
+    </>
+);
