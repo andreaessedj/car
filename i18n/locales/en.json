@@ -34,7 +34,11 @@
     "sendResetLink": "Send Reset Link",
     "backToLogin": "Back to Login",
     "resetSuccess": "Password reset email sent! Check your inbox.",
-    "resetError": "Failed to send password reset email."
+    "resetError": "Failed to send password reset email.",
+    "bio": "Bio (tell us about yourself)",
+    "gender": "Gender",
+    "bioRequired": "Bio is required.",
+    "genderRequired": "Gender is required."
   },
   "checkinModal": {
     "title": "Create New Check-in",

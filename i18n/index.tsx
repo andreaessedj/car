@@ -38,7 +38,11 @@ const itTranslations = {
     "sendResetLink": "Invia Link di Reset",
     "backToLogin": "Torna al Login",
     "resetSuccess": "Email per il reset della password inviata! Controlla la tua casella di posta.",
-    "resetError": "Impossibile inviare l'email per il reset della password."
+    "resetError": "Impossibile inviare l'email per il reset della password.",
+    "bio": "Bio (parla di te)",
+    "gender": "Genere",
+    "bioRequired": "La biografia è obbligatoria.",
+    "genderRequired": "Il genere è obbligatorio."
   },
   "checkinModal": {
     "title": "Crea Nuovo Check-in",

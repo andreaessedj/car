@@ -14,6 +14,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
+    const [gender, setGender] = useState('');
+    const [bio, setBio] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleAuth = async (e: React.FormEvent) => {
@@ -34,13 +36,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                 setLoading(false);
                 return;
             }
+            if (gender.trim() === '') {
+                toast.error(t('auth.genderRequired'));
+                setLoading(false);
+                return;
+            }
+            if (bio.trim() === '') {
+                toast.error(t('auth.bioRequired'));
+                setLoading(false);
+                return;
+            }
 
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
-                        display_name: displayName.trim()
+                        display_name: displayName.trim(),
+                        gender: gender,
+                        bio: bio.trim(),
                     }
                 }
             });
@@ -90,23 +104,41 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
 
                         <h2 className="text-2xl font-bold text-white mb-4">{view === 'login' ? t('auth.welcomeBack') : t('auth.createAccount')}</h2>
 
-                        <form onSubmit={handleAuth}>
+                        <form onSubmit={handleAuth} className="space-y-4">
                             {view === 'register' && (
-                                <div className="mb-4">
-                                    <label className="block text-gray-300 mb-1">{t('auth.displayName')}</label>
-                                    <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
-                                </div>
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-gray-300 mb-1">{t('auth.displayName')}</label>
+                                            <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-300 mb-1">{t('auth.gender')}</label>
+                                            <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                                                <option value="">{t('checkinModal.select')}</option>
+                                                <option value="M">{t('genders.M')}</option>
+                                                <option value="F">{t('genders.F')}</option>
+                                                <option value="Trav">{t('genders.Trav')}</option>
+                                                <option value="Trans">{t('genders.Trans')}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-300 mb-1">{t('auth.bio')}</label>
+                                        <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" placeholder={t('auth.bio')} required />
+                                    </div>
+                                </>
                             )}
-                            <div className="mb-4">
+                            <div>
                                 <label className="block text-gray-300 mb-1">{t('auth.email')}</label>
                                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
                             </div>
-                            <div className="mb-4">
+                            <div>
                                 <label className="block text-gray-300 mb-1">{t('auth.password')}</label>
                                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required />
                             </div>
                             {view === 'login' && (
-                                <div className="text-right -mt-2 mb-4">
+                                <div className="text-right -mt-2 mb-2">
                                     <button type="button" onClick={() => setView('forgotPassword')} className="text-sm text-red-400 hover:underline">
                                         {t('auth.forgotPassword')}
                                     </button>
