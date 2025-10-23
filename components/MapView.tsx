@@ -2,6 +2,7 @@ import React, { useMemo, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import type { Checkin } from '../types';
 import { MapPinIcon, UserIcon, MaleIcon, FemaleIcon, TransgenderIcon, CoupleIcon, ArrowTopRightOnSquareIcon } from './icons';
 import { useTranslation } from '../i18n';
@@ -127,7 +128,9 @@ const MapView: React.FC<MapViewProps> = ({ checkins, onMarkerClick, flyToLocatio
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
             <ZoomControl position="bottomleft" />
-            {memoizedMarkers}
+            <MarkerClusterGroup>
+                {memoizedMarkers}
+            </MarkerClusterGroup>
             <FlyToController location={flyToLocation} />
         </MapContainer>
     );
