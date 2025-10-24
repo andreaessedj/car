@@ -3,14 +3,14 @@ import ReactDOMServer from 'react-dom/server';
 import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import type { Checkin } from '../types';
-import { MapPinIcon, UserIcon, MaleIcon, FemaleIcon, TransgenderIcon, CoupleIcon, ArrowTopRightOnSquareIcon } from './icons';
+import type { Checkin, Venue } from '../types';
+import { MapPinIcon, UserIcon, MaleIcon, FemaleIcon, TransgenderIcon, CoupleIcon, ArrowTopRightOnSquareIcon, BuildingOffice2Icon } from './icons';
 import { useTranslation } from '../i18n';
 import VipStatusIcon from './VipStatusIcon';
 import { isVipActive } from '../utils/vip';
 
 
-const createIcon = (checkin: Checkin) => {
+const createCheckinIcon = (checkin: Checkin) => {
     const isVip = isVipActive(checkin.profiles);
     let color = '#a1a1aa'; // Default zinc
     let IconComponent;
@@ -57,9 +57,35 @@ const createIcon = (checkin: Checkin) => {
     });
 };
 
+const createVenueIcon = (venue: Venue) => {
+    const isVip = isVipActive(venue);
+    const color = '#8b5cf6'; // violet-500
+
+    const IconComponent = <BuildingOffice2Icon color={isVip ? '#facc15' : color} />;
+    
+    const vipClasses = isVip ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : '';
+    const backgroundClass = isVip ? 'bg-gray-900' : 'bg-gray-800 bg-opacity-70';
+
+    const iconHtml = `
+      <div class="w-10 h-10 p-1.5 ${backgroundClass} rounded-full flex items-center justify-center shadow-2xl backdrop-blur-sm ${vipClasses}">
+        ${ReactDOMServer.renderToString(IconComponent)}
+      </div>
+    `;
+
+    return new L.DivIcon({
+        html: iconHtml,
+        className: 'custom-leaflet-icon-venue',
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40]
+    });
+}
+
 interface MapViewProps {
     checkins: Checkin[];
-    onMarkerClick: (checkin: Checkin) => void;
+    venues: Venue[];
+    onCheckinClick: (checkin: Checkin) => void;
+    onVenueClick: (venue: Venue) => void;
     flyToLocation: [number, number] | null;
 }
 
@@ -76,12 +102,12 @@ const FlyToController: React.FC<{ location: [number, number] | null }> = ({ loca
     return null;
 }
 
-const MapView: React.FC<MapViewProps> = ({ checkins, onMarkerClick, flyToLocation }) => {
+const MapView: React.FC<MapViewProps> = ({ checkins, venues, onCheckinClick, onVenueClick, flyToLocation }) => {
     const { t } = useTranslation();
     
-    const memoizedMarkers = useMemo(() => {
+    const memoizedCheckinMarkers = useMemo(() => {
         return checkins.map(checkin => (
-            <Marker key={checkin.id} position={[checkin.lat, checkin.lon]} icon={createIcon(checkin)}>
+            <Marker key={`checkin-${checkin.id}`} position={[checkin.lat, checkin.lon]} icon={createCheckinIcon(checkin)}>
                 <Popup>
                     <div className="text-gray-900 p-1 w-56">
                         <h3 className="font-bold text-lg mb-2 truncate flex items-center gap-2">
@@ -99,7 +125,7 @@ const MapView: React.FC<MapViewProps> = ({ checkins, onMarkerClick, flyToLocatio
                         </div>
                         <div className="flex gap-2 mt-3">
                             <button 
-                                onClick={() => onMarkerClick(checkin)}
+                                onClick={() => onCheckinClick(checkin)}
                                 className="flex-1 bg-red-500 text-white text-sm font-semibold py-1 px-3 rounded-md hover:bg-red-600 transition-colors"
                             >
                                 {t('map.comment')}
@@ -119,7 +145,35 @@ const MapView: React.FC<MapViewProps> = ({ checkins, onMarkerClick, flyToLocatio
                 </Popup>
             </Marker>
         ));
-    }, [checkins, onMarkerClick, t]);
+    }, [checkins, onCheckinClick, t]);
+
+    const memoizedVenueMarkers = useMemo(() => {
+        return venues.map(venue => (
+            <Marker key={`venue-${venue.id}`} position={[venue.lat, venue.lon]} icon={createVenueIcon(venue)} zIndexOffset={1000}>
+                <Popup>
+                    <div className="text-gray-900 p-1 w-56">
+                         <h3 className="font-bold text-lg mb-2 truncate flex items-center gap-2">
+                            <span className="text-violet-600">{venue.name}</span>
+                            <VipStatusIcon profile={venue} className="h-5 w-5 flex-shrink-0" />
+                        </h3>
+                        {venue.logo_url && <img src={venue.logo_url} alt={venue.name} className="rounded-md mb-2 max-h-40 w-full object-cover" />}
+                        <p className="text-sm mb-2 break-words line-clamp-2">{venue.description}</p>
+                        <div className="flex items-center text-xs text-gray-500 gap-2">
+                           <MapPinIcon className="h-4 w-4 flex-shrink-0" /> <span className="truncate">{venue.address || t('map.unknownLocation')}</span>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                            <button 
+                                onClick={() => onVenueClick(venue)}
+                                className="flex-1 bg-violet-500 text-white text-sm font-semibold py-1 px-3 rounded-md hover:bg-violet-600 transition-colors"
+                            >
+                                {t('map.viewVenue')}
+                            </button>
+                        </div>
+                    </div>
+                </Popup>
+            </Marker>
+        ))
+    }, [venues, onVenueClick, t]);
 
     return (
         <MapContainer center={[41.902782, 12.496366]} zoom={6} scrollWheelZoom={true} className="h-full w-full z-0" zoomControl={false}>
@@ -129,8 +183,9 @@ const MapView: React.FC<MapViewProps> = ({ checkins, onMarkerClick, flyToLocatio
             />
             <ZoomControl position="bottomleft" />
             <MarkerClusterGroup>
-                {memoizedMarkers}
+                {memoizedCheckinMarkers}
             </MarkerClusterGroup>
+            {memoizedVenueMarkers}
             <FlyToController location={flyToLocation} />
         </MapContainer>
     );

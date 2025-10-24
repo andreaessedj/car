@@ -1,404 +1,270 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Toaster, toast } from 'react-hot-toast';
-import { supabase } from './services/supabase';
-import { useAuth } from './hooks/useAuth';
-import type { Checkin, FilterState, Profile } from './types';
 
-import Header from './components/Header';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Toaster } from 'react-hot-toast';
 import MapView from './components/MapView';
+import Header from './components/Header';
 import AuthModal from './components/AuthModal';
 import CheckInModal from './components/CheckInModal';
 import CheckinDetailModal from './components/CheckinDetailModal';
 import DashboardModal from './components/DashboardModal';
-import RecentCheckinsSlider from './components/RecentCheckinsSlider';
-import RecentUsersSlider from './components/RecentUsersSlider';
 import UserProfileModal from './components/UserProfileModal';
 import MessageModal from './components/MessageModal';
-import Guestbook from './components/Guestbook';
 import DisclaimerModal from './components/DisclaimerModal';
-import { useTranslation } from './i18n';
-import { generateFakeCheckin } from './services/fakeData';
+import RecentCheckinsSlider from './components/RecentCheckinsSlider';
+import RecentUsersSlider from './components/RecentUsersSlider';
+import Guestbook from './components/Guestbook';
 import VipPromoModal from './components/VipPromoModal';
-import { isVipActive } from './utils/vip';
 import Footer from './components/Footer';
-
-// Cookie helper functions
-const setCookie = (name: string, value: string, days: number) => {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
-};
-
-const getCookie = (name: string): string | null => {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for(let i=0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-};
+import VenueDetailModal from './components/VenueDetailModal';
+import type { Checkin, FilterState, Profile, Venue } from './types';
+import { supabase } from './services/supabase';
+import { useAuth } from './hooks/useAuth';
+import VenueDashboard from './components/VenueDashboard';
+import { useTranslation } from './i18n';
 
 const App: React.FC = () => {
-    const { user, profile } = useAuth();
     const { t } = useTranslation();
-    const [checkins, setCheckins] = useState<Checkin[]>([]);
-    const [recentUsers, setRecentUsers] = useState<Profile[]>([]);
-    const [onlineUsersCount, setOnlineUsersCount] = useState(0);
-    const [isCurrentUserOnline, setIsCurrentUserOnline] = useState(false);
-    const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
-    const [isVipPromoModalOpen, setIsVipPromoModalOpen] = useState(false);
-
-    const [isAuthModalOpen, setAuthModalOpen] = useState(false);
-    const [isCheckInModalOpen, setCheckInModalOpen] = useState(false);
-    const [isDashboardModalOpen, setDashboardModalOpen] = useState(false);
+    // Modal states
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showCheckInModal, setShowCheckInModal] = useState(false);
     const [selectedCheckin, setSelectedCheckin] = useState<Checkin | null>(null);
-    const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
-    const [messageRecipient, setMessageRecipient] = useState<Profile | null>(null);
+    const [showDashboard, setShowDashboard] = useState(false);
+    const [showUserProfile, setShowUserProfile] = useState<Profile | null>(null);
+    const [showMessageModal, setShowMessageModal] = useState<Profile | null>(null); // Kept for legacy compatibility if needed
+    const [initialRecipient, setInitialRecipient] = useState<Profile | null>(null);
+    const [showDisclaimer, setShowDisclaimer] = useState(!localStorage.getItem('disclaimerAccepted'));
+    const [showVipPromo, setShowVipPromo] = useState(false);
+    const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
 
+    // Data states
+    const [checkins, setCheckins] = useState<Checkin[]>([]);
+    const [venues, setVenues] = useState<Venue[]>([]);
+    const [recentUsers, setRecentUsers] = useState<Profile[]>([]);
+    const [cityOptions, setCityOptions] = useState<{ value: string; label: string }[]>([]);
+    const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+
+    // Filter and search states
     const [filters, setFilters] = useState<FilterState>({ gender: 'All', city: 'All', vipOnly: false });
-    const [flyToLocation, setFlyToLocation] = useState<[number, number] | null>(null);
-    
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Profile[]>([]);
+    const [flyToLocation, setFlyToLocation] = useState<[number, number] | null>(null);
 
-    useEffect(() => {
-        const accepted = getCookie('disclaimerAccepted') === 'true';
-        setIsDisclaimerAccepted(accepted);
-    }, []);
+    const { user, profile } = useAuth();
+    const presenceChannel = useMemo(() => user ? supabase.channel(`online-users`, {
+        config: {
+            presence: {
+                key: user.id,
+            },
+        },
+    }) : null, [user]);
 
-    useEffect(() => {
-        if (isVipActive(profile) || sessionStorage.getItem('vipPromoSeen')) {
-            return;
-        }
-    
-        const timer = setTimeout(() => {
-            setIsVipPromoModalOpen(true);
-            sessionStorage.setItem('vipPromoSeen', 'true');
-        }, 45000); // show after 45 seconds
-    
-        return () => clearTimeout(timer);
-    }, [profile]);
+    const isCurrentUserOnline = useMemo(() => {
+        if (!user || onlineUsers.length === 0) return false;
+        return onlineUsers.some(p => p.user_id === user.id);
+    }, [user, onlineUsers]);
 
-
-    const handleDisclaimerAccept = () => {
-        setCookie('disclaimerAccepted', 'true', 365); // Set cookie for 1 year
-        setIsDisclaimerAccepted(true);
-    };
-
-    const fetchCheckins = useCallback(async () => {
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data: checkinsData, error } = await supabase
+    const fetchData = useCallback(async () => {
+        const { data: checkinsData, error: checkinsError } = await supabase
             .from('checkins')
-            .select('*')
-            .gte('created_at', twentyFourHoursAgo)
-            .order('created_at', { ascending: false });
+            .select('*, profiles!user_id(*)')
+            .order('created_at', { ascending: false })
+            .limit(100);
 
-        if (error) {
-            console.error('Error fetching checkins:', error.message);
-            toast.error('Could not load check-ins.');
-            return;
+        if (checkinsError) console.error('Error fetching checkins:', checkinsError);
+        else setCheckins(checkinsData || []);
+        
+        const { data: venuesData, error: venuesError } = await supabase
+            .from('venues')
+            .select('*, profiles!inner(is_vip, vip_until)')
+            .eq('profiles.profile_type', 'club');
+        
+        if (venuesError) console.error('Error fetching venues:', venuesError);
+        else {
+             const transformedVenues = venuesData?.map(v => ({...v, is_vip: v.profiles.is_vip, vip_until: v.profiles.vip_until, profiles: null })) || [];
+             setVenues(transformedVenues as Venue[]);
         }
 
-        if (!checkinsData || checkinsData.length === 0) {
-            setCheckins([]);
-            return;
-        }
-
-        const userIds = [...new Set(checkinsData.map(c => c.user_id).filter(Boolean))];
-        let profilesMap = new Map();
-
-        if (userIds.length > 0) {
-            const { data: profilesData, error: profilesError } = await supabase
-                .from('profiles')
-                .select('id, is_vip, vip_until')
-                .in('id', userIds as string[]);
-            
-            if (profilesError) {
-                console.error('Error fetching profiles for checkins:', profilesError.message);
-            } else if (profilesData) {
-                profilesMap = new Map(profilesData.map(p => [p.id, { is_vip: p.is_vip, vip_until: p.vip_until }]));
-            }
-        }
-
-        const enrichedCheckins = checkinsData.map(c => ({
-            ...c,
-            profiles: c.user_id ? profilesMap.get(c.user_id) || null : null,
-        }));
-
-        setCheckins(enrichedCheckins as any[]);
-    }, []);
-
-    const fetchRecentUsers = useCallback(async () => {
-        const { data, error } = await supabase
+        const { data: recentUsersData, error: recentUsersError } = await supabase
             .from('profiles')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(15);
+            .neq('profile_type', 'club')
+            .limit(10);
 
-        if (error) {
-            console.error('Error fetching recent users:', error);
+        if (recentUsersError) {
+            console.error('Error fetching recent users:', recentUsersError);
         } else {
-            setRecentUsers(data || []);
+            setRecentUsers(recentUsersData || []);
+        }
+
+        if (checkinsData) {
+            const cities = ['All', ...new Set(checkinsData.map(c => c.city).filter(Boolean) as string[])];
+            setCityOptions(cities.map(c => ({ value: c, label: c })));
         }
     }, []);
-    
-    // Effect for automatic check-in generation
+
     useEffect(() => {
-        const runAutoCheckinLogic = async () => {
-            const AUTO_CHECKIN_KEY = 'autoCheckinState';
-            const today = new Date().toISOString().split('T')[0];
-
-            let state = {
-                lastRun: '',
-                dailyCount: 0,
-                dailyGoal: 0,
-            };
-
-            try {
-                const storedState = localStorage.getItem(AUTO_CHECKIN_KEY);
-                if (storedState) {
-                    state = JSON.parse(storedState);
-                }
-            } catch (e) {
-                console.error("Failed to parse auto-checkin state from localStorage", e);
-            }
+        fetchData();
+        const mainChannel = supabase.channel('public-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, fetchData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'venues' }, fetchData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchData)
+            .subscribe();
             
-            if (state.lastRun !== today) {
-                const dailyGoal = Math.floor(Math.random() * (80 - 50 + 1)) + 50; // 50-80
-                state = {
-                    lastRun: today,
-                    dailyCount: 0,
-                    dailyGoal: dailyGoal,
+        return () => {
+            supabase.removeChannel(mainChannel);
+        };
+    }, [fetchData]);
+
+    useEffect(() => {
+        if (!presenceChannel) return;
+
+        const handlePresenceSync = () => {
+            const newState = presenceChannel.presenceState();
+            const presences = Object.keys(newState).map(key => {
+                const pres = newState[key][0] as any;
+                return {
+                    user_id: key,
+                    online_at: pres.online_at,
                 };
-            }
-            
-            const needed = state.dailyGoal - state.dailyCount;
-            if (needed <= 0) {
-                return; // Daily goal met
-            }
-            
-            const maxPerSession = Math.min(needed, Math.floor(Math.random() * 3) + 2); // 2 to 4 per session
-            
-            for (let i = 0; i < maxPerSession; i++) {
-                const delay = (i * 10000) + (Math.random() * 15000); // 10-25 second intervals
-                
-                setTimeout(async () => {
-                    const checkinData = generateFakeCheckin();
-                    const { error } = await supabase.from('checkins').insert(checkinData as any);
-
-                    if (!error) {
-                        let currentState = state;
-                        try {
-                            const currentStoredState = localStorage.getItem(AUTO_CHECKIN_KEY);
-                            if(currentStoredState) currentState = JSON.parse(currentStoredState);
-                        } catch (e) {}
-
-                        if (currentState.lastRun === today) {
-                            currentState.dailyCount += 1;
-                            localStorage.setItem(AUTO_CHECKIN_KEY, JSON.stringify(currentState));
-                        }
-                    } else {
-                        console.error("Auto check-in creation failed:", error);
-                    }
-                }, delay);
-            }
+            });
+            setOnlineUsers(presences);
         };
 
-        const initTimeout = setTimeout(runAutoCheckinLogic, 5000); // Wait 5 seconds before starting
-
-        return () => clearTimeout(initTimeout);
-
-    }, []);
-
-    useEffect(() => {
-        const handleSearch = async () => {
-            if (searchQuery.trim().length < 2) {
-                setSearchResults([]);
-                return;
-            }
-
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .ilike('display_name', `%${searchQuery.trim()}%`)
-                .limit(5);
-
-            if (error) {
-                console.error("Error searching users:", error);
-                setSearchResults([]);
-            } else {
-                setSearchResults(data || []);
-            }
-        };
-
-        const debouncedSearch = setTimeout(() => {
-            handleSearch();
-        }, 300);
-
-        return () => clearTimeout(debouncedSearch);
-    }, [searchQuery]);
-
-    useEffect(() => {
-        fetchCheckins();
-        fetchRecentUsers();
-        
-        const channel = supabase.channel('realtime-updates')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, () => {
-                fetchCheckins();
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
-                fetchRecentUsers();
-            })
-            .subscribe((status) => {
+        presenceChannel
+            .on('presence', { event: 'sync' }, handlePresenceSync)
+            .on('presence', { event: 'join' }, handlePresenceSync)
+            .on('presence', { event: 'leave' }, handlePresenceSync)
+            .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
-                    setIsCurrentUserOnline(true);
-                    const presenceChannel = supabase.channel('online-users');
-                    presenceChannel.on('presence', { event: 'sync' }, () => {
-                        const count = Object.keys(presenceChannel.presenceState()).length;
-                        setOnlineUsersCount(count);
-                    }).subscribe(async (presenceStatus) => {
-                        if (presenceStatus === 'SUBSCRIBED') {
-                            await presenceChannel.track({ online_at: new Date().toISOString() });
-                        }
+                    await presenceChannel.track({
+                        online_at: new Date().toISOString(),
+                        user_id: user?.id
                     });
-                } else {
-                    setIsCurrentUserOnline(false);
                 }
             });
 
         return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [fetchCheckins, fetchRecentUsers]);
-
-    const handleCheckInClick = () => {
-        setCheckInModalOpen(true);
-    };
-
-    const handleCheckInSuccess = () => {
-        setCheckInModalOpen(false);
-        fetchCheckins();
-    };
-    
-    const filteredCheckins = useMemo(() => {
-        return checkins.filter(c => {
-            const genderMatch = filters.gender === 'All' || c.gender === filters.gender || (filters.gender === 'Coppia' && c.status === 'Coppia');
-            const cityMatch = filters.city === 'All' || c.city === filters.city;
-            const vipMatch = !filters.vipOnly || isVipActive(c.profiles);
-            return genderMatch && cityMatch && vipMatch;
-        });
-    }, [checkins, filters]);
-    
-    const cityOptions = useMemo(() => {
-        const cities = new Set(checkins.map(c => c.city).filter(Boolean));
-        const options = Array.from(cities).map(city => ({ value: city as string, label: city as string }));
-        return [{ value: 'All', label: 'All Cities' }, ...options];
-    }, [checkins]);
-
-    const sortedRecentUsers = useMemo(() => {
-        return [...recentUsers].sort((a, b) => {
-            const aIsVip = isVipActive(a);
-            const bIsVip = isVipActive(b);
-            if (aIsVip && !bIsVip) return -1;
-            if (!aIsVip && bIsVip) return 1;
-            if (a.created_at && b.created_at) {
-                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            if (presenceChannel) {
+                presenceChannel.unsubscribe();
             }
-            return 0;
-        });
-    }, [recentUsers]);
+        };
+    }, [presenceChannel, user]);
 
-    const handleRecentCheckinClick = (checkin: Checkin) => {
-        setFlyToLocation([checkin.lat, checkin.lon]);
-        setTimeout(() => setSelectedCheckin(checkin), 1500);
-    };
-    
-    const handleRecentUserClick = (profile: Profile) => {
-        setSelectedProfile(profile);
-    };
-
-    const handleSendMessage = (recipient: Profile) => {
-        if (!user) {
-            toast.error(t('toasts.loginRequired'));
-            setAuthModalOpen(true);
-            return;
+    useEffect(() => {
+        if (searchQuery.trim().length > 2) {
+            const searchUsers = async () => {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .ilike('display_name', `%${searchQuery}%`)
+                    .limit(5);
+                if (!error) {
+                    setSearchResults(data || []);
+                }
+            };
+            const debounce = setTimeout(searchUsers, 300);
+            return () => clearTimeout(debounce);
+        } else {
+            setSearchResults([]);
         }
-        setSelectedProfile(null);
-        setMessageRecipient(recipient);
-    };
+    }, [searchQuery]);
 
     const handleUserSearchSelect = (profile: Profile) => {
-        setSelectedProfile(profile);
+        setShowUserProfile(profile);
         setSearchQuery('');
         setSearchResults([]);
     };
 
+    const handleSendMessage = (recipient: Profile) => {
+        setShowUserProfile(null); // Close user profile if open
+        setInitialRecipient(recipient);
+        setShowDashboard(true);
+    };
+
+    const handleDashboardClose = () => {
+        setShowDashboard(false);
+        setInitialRecipient(null);
+    };
+
+    const handleDisclaimerAccept = () => {
+        localStorage.setItem('disclaimerAccepted', 'true');
+        setShowDisclaimer(false);
+    };
+
+    const filteredCheckins = useMemo(() => {
+        return checkins.filter(c => {
+            const genderMatch = filters.gender === 'All' || c.gender === filters.gender || (filters.gender === 'Coppia' && c.status === 'Coppia');
+            const cityMatch = filters.city === 'All' || c.city === filters.city;
+            const vipMatch = !filters.vipOnly || (c.profiles?.is_vip === true && new Date(c.profiles?.vip_until || 0) > new Date());
+            return genderMatch && cityMatch && vipMatch;
+        });
+    }, [checkins, filters]);
+
+    const recentCheckins = useMemo(() => checkins.slice(0, 10), [checkins]);
+
     return (
-        <div className="relative h-screen w-screen bg-gray-900 overflow-hidden">
-            {!isDisclaimerAccepted && <DisclaimerModal onAccept={handleDisclaimerAccept} />}
-            <Toaster position="top-center" toastOptions={{
-                style: { background: '#333', color: '#fff' }
-            }} />
-            <Header
-                onCheckInClick={handleCheckInClick}
-                onAuthClick={() => setAuthModalOpen(true)}
-                onDashboardClick={() => setDashboardModalOpen(true)}
-                onBecomeVipClick={() => toast.success(t('header.comingSoonTitle'))}
+        <div className="h-screen w-screen bg-gray-900 text-white relative flex flex-col">
+            <Toaster position="bottom-center" toastOptions={{
+                className: 'bg-gray-700 text-white',
+            }}/>
+            
+            {showDisclaimer && <DisclaimerModal onAccept={handleDisclaimerAccept} />}
+
+            <Header 
+                onCheckInClick={() => setShowCheckInModal(true)}
+                onAuthClick={() => setShowAuthModal(true)}
+                onDashboardClick={() => setShowDashboard(true)}
+                onBecomeVipClick={() => setShowVipPromo(true)}
                 filters={filters}
                 setFilters={setFilters}
                 cityOptions={cityOptions}
-                onlineUsersCount={onlineUsersCount}
+                onlineUsersCount={onlineUsers.length}
                 isCurrentUserOnline={isCurrentUserOnline}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 searchResults={searchResults}
                 onUserSearchSelect={handleUserSearchSelect}
             />
-            <MapView 
-                checkins={filteredCheckins} 
-                onMarkerClick={setSelectedCheckin}
-                flyToLocation={flyToLocation}
-            />
-
-            <Guestbook />
-
-            <div className="absolute bottom-10 left-0 right-0 z-10 hidden md:flex justify-center p-4 pointer-events-none">
-                <div className="flex flex-col md:flex-row items-stretch md:items-start gap-4 pointer-events-auto w-full md:w-auto">
-                    <div className="w-full md:w-[30rem] lg:w-[40rem]">
-                        <h3 className="text-white font-semibold mb-2 ml-1 text-sm drop-shadow-lg">{t('recentCheckins.title')}</h3>
-                        <RecentCheckinsSlider 
-                            checkins={checkins.slice(0, 15)} 
-                            onCheckinClick={handleRecentCheckinClick} 
-                        />
+            
+            <main className="flex-grow relative">
+                <MapView
+                    checkins={filteredCheckins}
+                    venues={venues}
+                    onCheckinClick={setSelectedCheckin}
+                    onVenueClick={setSelectedVenue}
+                    flyToLocation={flyToLocation}
+                />
+                <Guestbook />
+                 <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-[calc(100%-22rem)]">
+                    <div className="flex flex-row space-x-4">
+                        <div className="w-1/2">
+                             <h3 className="text-sm font-semibold text-red-400 mb-1 px-1 tracking-wide">{t('recentCheckins.title')}</h3>
+                            <RecentCheckinsSlider checkins={recentCheckins} onCheckinClick={setSelectedCheckin} />
+                        </div>
+                        <div className="w-1/2">
+                             <h3 className="text-sm font-semibold text-red-400 mb-1 px-1 tracking-wide">{t('recentUsers.title')}</h3>
+                            <RecentUsersSlider users={recentUsers} onUserClick={handleUserSearchSelect} />
+                        </div>
                     </div>
-                    
-                    <div className="w-4/5 h-px md:w-px md:h-32 bg-gray-700 self-center md:mt-6"></div>
-
-                    <div className="w-full md:w-[30rem] lg:w-[40rem]">
-                        <h3 className="text-white font-semibold mb-2 ml-1 text-sm drop-shadow-lg">{t('recentUsers.title')}</h3>
-                        <RecentUsersSlider 
-                            users={sortedRecentUsers} 
-                            onUserClick={handleRecentUserClick} 
-                        />
-                    </div>
-                </div>
-            </div>
+                 </div>
+            </main>
 
             <Footer />
             
-            {isAuthModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} />}
-            {isCheckInModalOpen && <CheckInModal onClose={() => setCheckInModalOpen(false)} onSuccess={handleCheckInSuccess} />}
-            {isDashboardModalOpen && <DashboardModal onClose={() => setDashboardModalOpen(false)} />}
+            {/* Modals */}
+            {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+            {showCheckInModal && <CheckInModal onClose={() => setShowCheckInModal(false)} onSuccess={() => { setShowCheckInModal(false); fetchData(); }} />}
             {selectedCheckin && <CheckinDetailModal checkin={selectedCheckin} onClose={() => setSelectedCheckin(null)} />}
-            {selectedProfile && <UserProfileModal profile={selectedProfile} onClose={() => setSelectedProfile(null)} onSendMessage={handleSendMessage} />}
-            {messageRecipient && <MessageModal recipient={messageRecipient} onClose={() => setMessageRecipient(null)} />}
-            {isVipPromoModalOpen && <VipPromoModal onClose={() => setIsVipPromoModalOpen(false)} />}
+            {selectedVenue && <VenueDetailModal venue={selectedVenue} onClose={() => setSelectedVenue(null)} />}
+            {showDashboard && (
+                profile?.profile_type === 'club' ? 
+                <VenueDashboard onClose={handleDashboardClose} /> : 
+                <DashboardModal onClose={handleDashboardClose} initialRecipient={initialRecipient} />
+            )}
+            {showUserProfile && <UserProfileModal profile={showUserProfile} onClose={() => setShowUserProfile(null)} onSendMessage={handleSendMessage} />}
+            {showMessageModal && <MessageModal recipient={showMessageModal} onClose={() => setShowMessageModal(null)} />}
+            {showVipPromo && <VipPromoModal onClose={() => setShowVipPromo(false)} />}
         </div>
     );
 };

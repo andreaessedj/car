@@ -3,10 +3,11 @@ import { VipIcon } from './icons';
 import { isVipActive } from '../utils/vip';
 import { useTranslation } from '../i18n';
 
+// FIX: Loosen type of profile prop to allow optional is_vip and vip_until properties to be compatible with Venue type.
 interface VipStatusIconProps {
     profile: {
-        is_vip: boolean;
-        vip_until: string | null;
+        is_vip?: boolean;
+        vip_until?: string | null;
     } | null;
     className?: string;
 }

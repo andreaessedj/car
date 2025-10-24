@@ -36,6 +36,21 @@ export interface Database {
         Insert: Partial<Message>;
         Update: Partial<Message>;
       };
+      venues: {
+        Row: Venue;
+        Insert: Partial<Venue>;
+        Update: Partial<Venue>;
+      },
+      events: {
+        Row: Event;
+        Insert: Partial<Event>;
+        Update: Partial<Event>;
+      },
+      weekly_schedules: {
+        Row: WeeklySchedule;
+        Insert: Partial<WeeklySchedule>;
+        Update: Partial<WeeklySchedule>;
+      }
     };
     Views: {
       [_ in never]: never
@@ -97,6 +112,48 @@ export type Profile = {
   vip_until: string | null;
   last_message_sent_at: string | null;
   messages_sent_today: number | null;
+  profile_type: 'user' | 'club' | null;
+};
+
+export type Venue = {
+  id: string; 
+  name: string;
+  description: string | null;
+  address: string | null;
+  lat: number;
+  lon: number;
+  opening_hours: { [key: string]: string } | null;
+  logo_url: string | null;
+  created_at?: string;
+  // Joined from profiles
+  is_vip?: boolean;
+  vip_until?: string | null;
+};
+
+export type WeeklySchedule = {
+  id: number;
+  venue_id: string;
+  week_start_date: string; // YYYY-MM-DD format for Monday
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Event = {
+  id: number;
+  venue_id: string;
+  title: string;
+  description: string;
+  image_url: string | null;
+  event_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  cost_single_male: string | null;
+  cost_single_female: string | null;
+  cost_couple: string | null;
+  target_audience: string | null;
+  dress_code: string | null;
+  external_link: string | null;
+  created_at?: string;
 };
 
 export type Message = {

@@ -1,256 +1,283 @@
+
+
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 
-// The JSON import was causing syntax errors in some environments.
-// By embedding the JSON content directly, we avoid module resolution issues.
-const itTranslations = {
-  "appName": "ADULT-MEET",
-  "filterGender": "Filtra per genere",
-  "filterCity": "Filtra per città",
-  "newCheckin": "Nuovo Check-in",
-  "logout": "Logout",
-  "loginRegister": "Login / Registrati",
-  "usersOnline": "utenti online",
-  "searchUsersPlaceholder": "Cerca utenti...",
-  "genders": {
-    "All": "Tutti",
-    "M": "Uomo",
-    "F": "Donna",
-    "Trav": "Trav",
-    "Trans": "Trans",
-    "Coppia": "Coppia"
+const it = {
+  appName: "ADULT-MEET",
+  map: {
+    unknownLocation: "Luogo sconosciuto",
+    notSpecified: "Non specificato",
+    comment: "Commenta",
+    navigate: "Naviga",
+    viewVenue: "Vedi Locale"
   },
-  "auth": {
-    "login": "Login",
-    "register": "Registrati",
-    "welcomeBack": "Bentornato!",
-    "createAccount": "Crea un Account",
-    "displayName": "Nome Visualizzato",
-    "email": "Email",
-    "password": "Password",
-    "processing": "Caricamento...",
-    "loginSuccess": "Login effettuato con successo!",
-    "registerSuccess": "Registrazione completata! Controlla la tua email per confermare.",
-    "userExists": "Esiste già un utente con questa email.",
-    "displayNameRequired": "Il nome visualizzato è obbligatorio.",
-    "forgotPassword": "Password dimenticata?",
-    "resetPasswordTitle": "Reimposta Password",
-    "resetPasswordInstructions": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
-    "sendResetLink": "Invia Link di Reset",
-    "backToLogin": "Torna al Login",
-    "resetSuccess": "Email per il reset della password inviata! Controlla la tua casella di posta.",
-    "resetError": "Impossibile inviare l'email per il reset della password.",
-    "bio": "Bio (parla di te)",
-    "gender": "Genere",
-    "bioRequired": "La biografia è obbligatoria.",
-    "genderRequired": "Il genere è obbligatorio."
+  genders: {
+    All: "Tutti",
+    M: "Uomo",
+    F: "Donna",
+    Trav: "Trav",
+    Trans: "Trans",
+    Coppia: "Coppia"
   },
-  "checkinModal": {
-    "title": "Crea Nuovo Check-in",
-    "acquiringLocation": "Acquisizione della posizione in corso...",
-    "locationError": "Impossibile ottenere la posizione. Per favore, concedi l'autorizzazione e riprova.",
-    "tryAgain": "Riprova",
-    "locationFound": "Posizione trovata: {{city}}",
-    "locationRequired": "La posizione è necessaria per il check-in.",
-    "nickname": "Nickname",
-    "description": "Descrizione (cosa stai cercando?)",
-    "gender": "Sono",
-    "select": "Seleziona...",
-    "status": "Stato",
-    "single": "Single",
-    "couple": "Coppia",
-    "photoOptional": "Foto (Opzionale)",
-    "creating": "Creazione...",
-    "checkinNow": "Fai Check-in Ora",
-    "adjustLocationMap": "Clicca sulla mappa per posizionare il puntatore"
+  searchUsersPlaceholder: "Cerca utenti...",
+  filterGender: "Filtra per genere",
+  filterCity: "Filtra per città",
+  vipOnlyFilter: "Solo VIP",
+  usersOnline: "utenti online",
+  newCheckin: "Nuovo Check-in",
+  header: {
+    isVip: "VIP",
+    comingSoonTitle: "Diventa VIP (Prossimamente)",
+    becomeVipComingSoon: "Diventa VIP"
   },
-  "map": {
-    "unknownLocation": "Posizione Sconosciuta",
-    "notSpecified": "Non specificato",
-    "comment": "Commenta",
-    "navigate": "Naviga"
+  logout: "Esci",
+  loginRegister: "Accedi / Registrati",
+  auth: {
+    loginSuccess: "Accesso effettuato con successo!",
+    displayNameRequired: "Il nome visualizzato è obbligatorio.",
+    venueNameRequired: "Il nome del locale è obbligatorio.",
+    genderRequired: "Il genere è obbligatorio.",
+    bioRequired: "La bio è obbligatoria.",
+    locationRequired: "La posizione è obbligatoria.",
+    venueCreationError: "Errore durante la creazione del locale.",
+    registerSuccess: "Registrazione avvenuta! Controlla la tua email per la conferma.",
+    userExists: "Un utente con questa email esiste già.",
+    resetError: "Errore durante il reset della password.",
+    resetSuccess: "Link per il reset inviato! Controlla la tua email.",
+    chooseAccountType: "Scegli il tipo di account",
+    chooseAccountTypeSubtitle: "Come vuoi usare la nostra piattaforma?",
+    privateUser: "Utente Privato",
+    privateUserDescription: "Crea un profilo personale per fare check-in, chattare ed esplorare la mappa.",
+    venue: "Locale / Club",
+    venueDescription: "Registra il tuo locale per pubblicare eventi e farti trovare da nuovi clienti.",
+    back: "Indietro",
+    createAccountUser: "Crea il tuo Account",
+    createAccountVenue: "Registra il tuo Locale",
+    displayName: "Nome Visualizzato",
+    gender: "Genere",
+    bio: "La tua bio",
+    bioPlaceholder: "Racconta qualcosa di te...",
+    venueName: "Nome del Locale",
+    venueNamePlaceholder: "Es: 'Paradise Club'",
+    venueDescriptionLabel: "Descrizione",
+    venueDescriptionPlaceholder: "Descrivi il tuo locale, l'atmosfera, il tipo di serate...",
+    venueAddressLabel: "Indirizzo",
+    venueAddressPlaceholder: "Es: Via Roma 1, 00100 Roma, Italia",
+    venueLogoLabel: "URL Logo (opzionale)",
+    venueLogoPlaceholder: "https://.../logo.png",
+    venueLocationLabel: "Posizione sulla Mappa",
+    venueOpeningHoursLabel: "Orari di Apertura",
+    venueDays: {
+        monday: "Lunedì",
+        tuesday: "Martedì",
+        wednesday: "Mercoledì",
+        thursday: "Giovedì",
+        friday: "Venerdì",
+        saturday: "Sabato",
+        sunday: "Domenica"
+    },
+    venueHoursPlaceholder: "Es: 22:00 - 04:00 o Chiuso",
+    email: "Email",
+    password: "Password",
+    processing: "In elaborazione...",
+    register: "Registrati",
+    login: "Accedi",
+    welcomeBack: "Bentornato!",
+    forgotPassword: "Password dimenticata?",
+    resetPasswordTitle: "Reimposta Password",
+    resetPasswordInstructions: "Inserisci la tua email per ricevere un link di reset.",
+    sendResetLink: "Invia Link",
+    backToLogin: "Torna al Login",
   },
-  "toasts": {
-    "commentsLoadError": "Impossibile caricare i commenti.",
-    "loginRequired": "Devi essere loggato per inviare un messaggio.",
-    "savingProfile": "Salvataggio del profilo in corso...",
-    "checkinSuccess": "Check-in creato con successo!",
-    "checkinFailed": "Creazione del check-in fallita.",
-    "messagesLoadError": "Caricamento messaggi fallito.",
-    "vipExtended": "Abbonamento VIP esteso con successo!",
-    "vipExtensionFailed": "Impossibile estendere l'abbonamento VIP.",
-    "processing": "Elaborazione...",
-    "messageLimitReached": "Hai raggiunto il limite giornaliero di 30 messaggi privati. Gli utenti VIP hanno messaggi illimitati."
+  checkinModal: {
+    select: "Seleziona...",
+    locationError: "Impossibile ottenere la posizione. Assicurati di aver dato i permessi e riprova.",
+    locationRequired: "La posizione sulla mappa è obbligatoria.",
+    creating: "Creazione check-in...",
+    title: "Crea un nuovo Check-in",
+    acquiringLocation: "Acquisizione posizione...",
+    tryAgain: "Riprova",
+    locationFound: "Posizione trovata a: {{city}}",
+    adjustLocationMap: "Clicca sulla mappa per aggiustare la posizione",
+    nickname: "Nickname",
+    description: "Descrizione (cosa cerchi?)",
+    gender: "Genere",
+    status: "Stato",
+    single: "Single",
+    couple: "Coppia",
+    photoOptional: "Foto (opzionale)",
+    checkinNow: "Fai Check-in Ora",
   },
-  "checkinDetail": {
-    "notAvailable": "N/D",
-    "directions": "Indicazioni",
-    "comments": "Commenti",
-    "noComments": "Nessun commento. Sii il primo!",
-    "addComment": "Aggiungi un commento..."
+  toasts: {
+    checkinSuccess: "Check-in creato con successo!",
+    checkinFailed: "Creazione check-in fallita.",
+    commentsLoadError: "Errore nel caricamento dei commenti.",
+    messageLimitReached: "Hai raggiunto il limite di messaggi giornalieri. Diventa VIP per messaggi illimitati!",
   },
-  "dashboard": {
-    "profileUpdated": "Profilo aggiornato con successo!",
-    "profileUpdateFailed": "Aggiornamento del profilo fallito.",
-    "noBio": "Nessuna biografia fornita.",
-    "gender": "Genere",
-    "status": "Stato",
-    "single": "Single",
-    "couple": "Coppia",
-    "displayName": "Nome Visualizzato",
-    "bio": "Bio",
-    "select": "Seleziona...",
-    "cancel": "Annulla",
-    "saving": "Salvataggio...",
-    "saveChanges": "Salva Modifiche",
-    "editProfile": "Modifica Profilo",
-    "profileTab": "Profilo",
-    "messagesTab": "Messaggi",
-    "noMessages": "Nessun messaggio ancora. Cerca un utente e inizia una conversazione!",
-    "selectConversation": "Seleziona una conversazione per vedere i messaggi.",
-    "chatWith": "Chat con {{name}}",
-    "typeMessagePlaceholder": "Scrivi il tuo messaggio...",
-    "you": "Tu",
-    "yesterday": "Ieri",
-    "vipStatusTitle": "Stato VIP",
-    "vipActiveUntil": "Attivo fino al {{date}}",
-    "vipExpiredOn": "Scaduto il {{date}}",
-    "notVip": "Non sei un membro VIP.",
-    "extendVip": "Estendi VIP (30 giorni)",
-    "extendVipComingSoon": "Estendi VIP (Presto Disponibile)"
+  checkinDetail: {
+    notAvailable: "N/D",
+    directions: "Indicazioni",
+    comments: "Commenti",
+    noComments: "Nessun commento ancora. Sii il primo!",
+    addComment: "Aggiungi un commento...",
   },
-  "recentCheckins": {
-    "title": "Ultimi Check-in"
+  dashboard: {
+      noBio: "Nessuna biografia impostata.",
+      gender: "Genere",
+      status: "Stato",
+      couple: "Coppia",
+      single: "Single",
+      backToMessages: "Tutti i messaggi",
+      cancel: "Annulla",
+      saving: "Salvataggio...",
+      saveChanges: "Salva Modifiche",
   },
-  "recentUsers": {
-    "title": "Ultimi Utenti",
-    "noCheckins": "Questo utente non ha ancora effettuato check-in."
+  recentCheckins: {
+    title: "Ultimi Check-in"
   },
-  "userProfile": {
-    "title": "Profilo Utente",
-    "sendMessage": "Invia Messaggio Privato"
+  recentUsers: {
+    title: "Ultimi Utenti"
   },
-  "messageModal": {
-    "title": "Messaggio a {{name}}",
-    "placeholder": "Scrivi il tuo messaggio...",
-    "send": "Invia",
-    "sending": "Invio in corso...",
-    "success": "Messaggio inviato con successo!",
-    "error": "Impossibile inviare il messaggio."
+  userProfile: {
+    title: "Profilo Utente",
+    sendMessage: "Invia Messaggio",
   },
-  "guestbook": {
-    "title": "Guestbook",
-    "signTitle": "Firma il guestbook",
-    "nickname": "Nickname",
-    "message": "Il tuo messaggio",
-    "sign": "Firma",
-    "signing": "Invio...",
-    "noMessages": "Nessun messaggio. Sii il primo a firmare!",
-    "success": "Guestbook firmato con successo!"
+  messageModal: {
+    sending: "Invio in corso...",
+    success: "Messaggio inviato!",
+    error: "Errore nell'invio del messaggio.",
+    title: "Invia un messaggio a {{name}}",
+    placeholder: "Scrivi il tuo messaggio...",
+    send: "Invia",
   },
-  "timeAgo": {
-    "year": "a",
-    "years": "a",
-    "month": "m",
-    "months": "m",
-    "day": "g",
-    "days": "g",
-    "hour": "o",
-    "hours": "o",
-    "minute": "m",
-    "minutes": "m",
-    "justNow": "adesso"
+  timeAgo: {
+    year: "a",
+    years: "a",
+    month: "m",
+    months: "m",
+    day: "g",
+    days: "g",
+    hour: "o",
+    hours: "o",
+    minute: "m",
+    minutes: "m",
+    justNow: "adesso"
   },
-  "disclaimer": {
-    "title": "Avviso Importante – Contenuti per un Pubblico Adulto",
-    "intro": "Il sito che stai per visitare potrebbe contenere testi, immagini, descrizioni o riferimenti a situazioni di natura erotica, sensuale o comunque destinati a un pubblico maggiorenne. L’accesso è pertanto consentito esclusivamente a persone di età pari o superiore ai 18 anni (oppure all’età minima prevista dalle leggi vigenti nel Paese da cui si effettua l’accesso).",
-    "rules": "Questo portale non promuove comportamenti illegali, offensivi o non consenzienti. Tutti i contenuti eventualmente a carattere adulto hanno scopo informativo, educativo o di intrattenimento e sono rivolti a un pubblico consapevole e responsabile.",
-    "declarationTitle": "Accedendo, dichiari di:",
-    "declaration1": "avere almeno 18 anni (o la maggiore età prevista nel tuo Paese);",
-    "declaration2": "comprendere la natura dei contenuti presenti nel sito;",
-    "declaration3": "accettare che l’autore e i gestori del portale non siano responsabili per l’uso improprio o non conforme alle leggi dei materiali qui pubblicati;",
-    "declaration4": "accettare l’informativa sulla privacy e le condizioni d’uso del sito.",
-    "exit": "Se non desideri visualizzare materiali destinati a un pubblico adulto, ti invitiamo a lasciare immediatamente questa pagina.",
-    "acceptButton": "Accetto - Entra nel sito"
+  guestbook: {
+    title: "Guestbook",
+    success: "Messaggio firmato!",
+    noMessages: "Nessun messaggio. Lascia il primo!",
+    signTitle: "Lascia un messaggio",
+    nickname: "Nickname",
+    message: "Messaggio",
+    signing: "Invio...",
+    sign: "Firma",
   },
-  "vipPromo": {
-    "title": "Diventa VIP (presto disponibile) 🚀",
-    "subtitle": "Sblocca vantaggi esclusivi per incontrare più persone e muoverti con discrezione:",
-    "feature1": "Evidenza check-in",
-    "feature2": "Boost profilo",
-    "feature3": "Messaggi prioritari",
-    "feature4": "Filtri avanzati",
-    "footer": "Naviga giornalmente e provalo per primo!"
+  disclaimer: {
+    title: "Benvenuto su ADULT-MEET",
+    intro: "Prima di continuare, leggi e accetta le nostre condizioni.",
+    declarationTitle: "Accedendo dichiari di:",
+    declaration1: "Avere più di 18 anni.",
+    declaration2: "Accettare i nostri Termini di Servizio e il Regolamento.",
+    declaration3: "Essere consapevole che questa è una community per adulti e potresti vedere contenuti e interagire con persone in contesti di incontri.",
+    declaration4: "Utilizzare la piattaforma in modo responsabile e rispettoso.",
+    exit: "Se non accetti queste condizioni, esci dal sito.",
+    acceptButton: "Ho più di 18 anni e accetto"
   },
-  "vip": {
-    "active": "Utente VIP",
-    "expired": "VIP Scaduto"
+  vipPromo: {
+    title: "Diventa un Utente VIP!",
+    subtitle: "Ottieni il massimo da ADULT-MEET con i vantaggi esclusivi.",
+    feature1: "Messaggi privati illimitati",
+    feature2: "Check-in in evidenza sulla mappa",
+    feature3: "Profilo in cima alle liste",
+    feature4: "Filtro per vedere solo i VIP",
+    footer: "Funzionalità VIP in arrivo prossimamente!"
   },
-  "vipOnlyFilter": "Solo VIP",
-  "header": {
-    "becomeVip": "Diventa VIP",
-    "isVip": "Utente VIP",
-    "becomeVipComingSoon": "Diventa VIP (Presto disp.)",
-    "comingSoonTitle": "Funzionalità in arrivo"
+  vip: {
+    active: "Utente VIP",
+    expired: "VIP Scaduto"
+  },
+  venueDetail: {
+    closed: "Chiuso",
+    openingHours: "Orari di Apertura",
+    today: "Oggi",
+    weeklySchedule: "Programma Settimanale",
+    dressCode: "Dress Code",
+    costs: "Costi d'ingresso",
+    moreInfo: "Più Info / Prenota",
+    noEvent: "Nessun evento programmato per questo giorno.",
+    directions: "Indicazioni stradali"
+  },
+  venueDashboard: {
+    previousWeek: "Settimana Prec.",
+    nextWeek: "Settimana Succ.",
+    title: "Pannello di Controllo Locale",
+    detailsTab: "Dettagli Locale",
+    eventsTab: "Gestione Eventi",
+    deleteVenueAccount: "Elimina Account Locale",
+    dangerZoneTitle: "Zona Pericolosa",
+    dangerZoneDescription: "Queste azioni sono permanenti. Procedi con cautela.",
+    noEventScheduled: "Nessun evento programmato.",
+    addEvent: "Aggiungi",
+    editEvent: "Modifica",
+    futureWeekMessage: "Puoi programmare gli eventi per questa settimana a partire da Lunedì."
+  },
+  eventEditor: {
+    title: "Gestisci Evento per il {{date}}",
+    eventName: "Nome Evento",
+    description: "Descrizione",
+    image: "Immagine Evento",
+    targetAudience: "Target (es. Coppie, Single M/F, Over 40)",
+    dressCode: "Abbigliamento (es. Elegante, Casual, Fetish)",
+    externalLink: "Link Esterno (es. per prenotazioni)",
+    costs: "Costi di Ingresso",
+    costSingleMale: "Uomo Single",
+    costSingleFemale: "Donna Single",
+    costCouple: "Coppia",
+    save: "Salva Evento",
+    saving: "Salvataggio...",
+    backToSchedule: "Torna alla programmazione",
+    uploading: "Caricamento immagine..."
   }
 };
 
-interface LanguageContextType {
-    language: string;
-    setLanguage: (language: string) => void;
-    t: (key: string, options?: { [key: string]: string | number }) => string;
-}
+type Translations = typeof it;
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
-
-const translations = {
-    it: itTranslations,
-};
+const I18nContext = createContext({
+    language: 'it',
+    t: (key: string, options?: { [key: string]: string | number }): string => key,
+});
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const language = 'it';
-
-    const getNestedTranslation = useCallback((lang: string, key: string): string | object | undefined => {
-        const langData = translations[lang as keyof typeof translations];
-        if (!langData) return undefined;
-
-        return key.split('.').reduce((obj: any, k: string) => {
-            return obj && obj[k];
-        }, langData);
-    }, []);
-
+    const language = 'it'; // Hardcoded to Italian for now
 
     const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {
-        let translation = getNestedTranslation(language, key) as string;
-
-        if (!translation || typeof translation !== 'string') {
-            console.warn(`Translation not found for key: ${key}`);
-            return key;
+        const keyParts = key.split('.');
+        let translation: any = translations;
+        for (const part of keyParts) {
+            if (translation && typeof translation === 'object' && part in translation) {
+                translation = translation[part];
+            } else {
+                return key; // Return key if not found
+            }
+        }
+        
+        if (typeof translation === 'string' && options) {
+            return Object.entries(options).reduce((str, [k, v]) => str.replace(`{{${k}}}`, String(v)), translation);
         }
 
-        if (options) {
-            Object.keys(options).forEach(k => {
-                const regex = new RegExp(`{{${k}}}`, 'g');
-                translation = translation.replace(regex, String(options[k]));
-            });
-        }
-
-        return translation;
-    }, [language, getNestedTranslation]);
-
-    // setLanguage is now a no-op function as the language is fixed to Italian.
-    const setLanguage = () => {};
+        return typeof translation === 'string' ? translation : key;
+    }, []);
 
     return (
-        <LanguageContext.Provider value={{ language, setLanguage, t }}>
+        <I18nContext.Provider value={{ language, t }}>
             {children}
-        </LanguageContext.Provider>
+        </I18nContext.Provider>
     );
 };
 
 export const useTranslation = () => {
-    const context = useContext(LanguageContext);
-    if (context === undefined) {
-        throw new Error('useTranslation must be used within an I18nProvider');
-    }
-    return context;
+    return useContext(I18nContext);
 };
+
+const translations: Translations = it;
