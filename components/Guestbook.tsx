@@ -1,11 +1,18 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n';
 import type { GuestbookMessage } from '../types';
 import { toast } from 'react-hot-toast';
-import { PaperAirplaneIcon } from './icons';
+import { PaperAirplaneIcon, XMarkIcon } from './icons';
 import VipStatusIcon from './VipStatusIcon';
+
+interface GuestbookProps {
+    isOpen: boolean;
+    onClose?: () => void;
+    isMobile?: boolean;
+}
 
 const timeAgo = (dateString: string, t: (key: string, options?: { [key: string]: string | number }) => string) => {
     const date = new Date(dateString);
@@ -40,7 +47,7 @@ const timeAgo = (dateString: string, t: (key: string, options?: { [key: string]:
     return t('timeAgo.justNow');
 };
 
-const Guestbook: React.FC = () => {
+const Guestbook: React.FC<GuestbookProps> = ({ isOpen, onClose, isMobile = false }) => {
     const { t } = useTranslation();
     const { user, profile } = useAuth();
     const [messages, setMessages] = useState<GuestbookMessage[]>([]);
@@ -137,9 +144,23 @@ const Guestbook: React.FC = () => {
         setLoading(false);
     };
 
+    const desktopClasses = "absolute top-1/2 right-4 transform -translate-y-1/2 w-80 max-w-[80vw] h-[60vh] max-h-[550px] shadow-xl";
+    const mobileClasses = `fixed bottom-0 left-0 right-0 w-full h-[70vh] rounded-t-lg shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`;
+
+    if (isMobile && !isOpen) {
+        return null;
+    }
+
     return (
-        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-80 max-w-[80vw] h-[60vh] max-h-[550px] bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-lg shadow-xl z-10 hidden lg:flex flex-col p-3 text-white">
-            <h2 className="text-lg font-bold text-red-500 mb-2 border-b border-gray-600 pb-1.5">{t('guestbook.title')}</h2>
+        <div className={`bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-lg z-30 flex flex-col p-3 text-white ${isMobile ? mobileClasses : desktopClasses}`}>
+            <div className="flex justify-between items-center border-b border-gray-600 pb-1.5 mb-2">
+                <h2 className="text-lg font-bold text-red-500">{t('guestbook.title')}</h2>
+                {isMobile && onClose && (
+                    <button onClick={onClose} className="text-gray-400 hover:text-white">
+                        <XMarkIcon className="h-6 w-6" />
+                    </button>
+                )}
+            </div>
             
             <div className="flex-grow overflow-y-auto pr-1.5 space-y-2 custom-scrollbar">
                 {messages.length > 0 ? messages.map(msg => (

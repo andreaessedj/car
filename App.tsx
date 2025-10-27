@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import MapView from './components/MapView';
 import Header from './components/Header';
 import AuthModal from './components/AuthModal';
 import CheckInModal from './components/CheckInModal';
 import CheckinDetailModal from './components/CheckinDetailModal';
-import DashboardModal from './components/DashboardModal';
+import DashboardPanel from './components/DashboardModal';
 import UserProfileModal from './components/UserProfileModal';
 import MessageModal from './components/MessageModal';
 import DisclaimerModal from './components/DisclaimerModal';
@@ -16,11 +16,12 @@ import Guestbook from './components/Guestbook';
 import VipPromoModal from './components/VipPromoModal';
 import Footer from './components/Footer';
 import VenueDetailModal from './components/VenueDetailModal';
-import type { Checkin, FilterState, Profile, Venue } from './types';
+import type { Checkin, FilterState, Profile, Venue, Message } from './types';
 import { supabase } from './services/supabase';
 import { useAuth } from './hooks/useAuth';
 import VenueDashboard from './components/VenueDashboard';
 import { useTranslation } from './i18n';
+import { ChatBubbleLeftRightIcon, UserCircleIcon } from './components/icons';
 
 const App: React.FC = () => {
     const { t } = useTranslation();
@@ -35,6 +36,7 @@ const App: React.FC = () => {
     const [showDisclaimer, setShowDisclaimer] = useState(!localStorage.getItem('disclaimerAccepted'));
     const [showVipPromo, setShowVipPromo] = useState(false);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+    const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
 
     // Data states
     const [checkins, setCheckins] = useState<Checkin[]>([]);
@@ -116,6 +118,73 @@ const App: React.FC = () => {
         };
     }, [fetchData]);
 
+    // Effect for real-time messages and notifications
+    useEffect(() => {
+        if (!user) return;
+
+        const handleNewMessage = (payload: { new: Message }) => {
+            const newMessage = payload.new;
+            
+            // Show toast only if dashboard is closed or not viewing this specific chat
+            const isChattingWithSender = initialRecipient?.id === newMessage.sender_id && showDashboard;
+
+            if (!isChattingWithSender) {
+                const openChat = () => {
+                    supabase.from('profiles').select('*').eq('id', newMessage.sender_id).single().then(({data}) => {
+                       if (data) {
+                           setInitialRecipient(data);
+                           setShowDashboard(true);
+                           toast.dismiss(newMessage.id.toString());
+                       }
+                    });
+                };
+                
+                toast.custom((t) => (
+                     <div
+                        onClick={openChat}
+                        className={`${
+                        t.visible ? 'animate-enter' : 'animate-leave'
+                        } max-w-md w-full bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 cursor-pointer`}
+                    >
+                        <div className="flex-1 w-0 p-4">
+                            <div className="flex items-start">
+                                <div className="flex-shrink-0 pt-0.5">
+                                     <UserCircleIcon className="h-10 w-10 text-gray-400" />
+                                </div>
+                                <div className="ml-3 flex-1">
+                                    <p className="text-sm font-medium text-white">
+                                       {t('dashboard.newMessageFrom')} {newMessage.sender?.display_name || '...'}
+                                    </p>
+                                    <p className="mt-1 text-sm text-gray-400 truncate">
+                                        {newMessage.content}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ), { id: newMessage.id.toString() });
+            }
+        };
+
+        const messagesChannel = supabase
+            .channel(`public:messages:receiver_id=eq.${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `receiver_id=eq.${user.id}`,
+                },
+                (payload) => handleNewMessage(payload as any)
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(messagesChannel);
+        };
+    }, [user, showDashboard, initialRecipient, t]);
+
     useEffect(() => {
         if (!presenceChannel) return;
 
@@ -126,6 +195,7 @@ const App: React.FC = () => {
                 return {
                     user_id: key,
                     online_at: pres.online_at,
+                    typing: pres.typing || false,
                 };
             });
             setOnlineUsers(presences);
@@ -204,7 +274,7 @@ const App: React.FC = () => {
     const recentCheckins = useMemo(() => checkins.slice(0, 10), [checkins]);
 
     return (
-        <div className="h-screen w-screen bg-gray-900 text-white relative flex flex-col">
+        <div className="h-screen w-screen bg-gray-900 text-white relative flex flex-col overflow-hidden">
             <Toaster position="bottom-center" toastOptions={{
                 className: 'bg-gray-700 text-white',
             }}/>
@@ -235,8 +305,21 @@ const App: React.FC = () => {
                     onVenueClick={setSelectedVenue}
                     flyToLocation={flyToLocation}
                 />
-                <Guestbook />
-                 <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-[calc(100%-22rem)]">
+                
+                {/* Guestbook hidden on small screens, button to show it */}
+                <div className="hidden lg:block">
+                     <Guestbook isOpen={true} />
+                </div>
+                 <button 
+                    onClick={() => setIsGuestbookOpen(true)}
+                    className="lg:hidden fixed bottom-28 right-4 z-20 bg-red-600 p-3 rounded-full shadow-lg text-white"
+                    aria-label={t('guestbook.title')}
+                >
+                    <ChatBubbleLeftRightIcon className="h-6 w-6" />
+                </button>
+                <Guestbook isOpen={isGuestbookOpen} onClose={() => setIsGuestbookOpen(false)} isMobile={true}/>
+                
+                 <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-full">
                     <div className="flex flex-row space-x-4">
                         <div className="w-1/2">
                              <h3 className="text-sm font-semibold text-red-400 mb-1 px-1 tracking-wide">{t('recentCheckins.title')}</h3>
@@ -252,16 +335,23 @@ const App: React.FC = () => {
 
             <Footer />
             
-            {/* Modals */}
+            {/* Modals & Panels */}
             {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
             {showCheckInModal && <CheckInModal onClose={() => setShowCheckInModal(false)} onSuccess={() => { setShowCheckInModal(false); fetchData(); }} />}
             {selectedCheckin && <CheckinDetailModal checkin={selectedCheckin} onClose={() => setSelectedCheckin(null)} />}
             {selectedVenue && <VenueDetailModal venue={selectedVenue} onClose={() => setSelectedVenue(null)} />}
-            {showDashboard && (
-                profile?.profile_type === 'club' ? 
-                <VenueDashboard onClose={handleDashboardClose} /> : 
-                <DashboardModal onClose={handleDashboardClose} initialRecipient={initialRecipient} />
-            )}
+            
+            {profile?.profile_type === 'club' ? 
+                (showDashboard && <VenueDashboard onClose={handleDashboardClose} />) : 
+                (<DashboardPanel 
+                    isOpen={showDashboard}
+                    onClose={handleDashboardClose} 
+                    initialRecipient={initialRecipient} 
+                    presenceChannel={presenceChannel}
+                    onlineUsers={onlineUsers}
+                />)
+            }
+            
             {showUserProfile && <UserProfileModal profile={showUserProfile} onClose={() => setShowUserProfile(null)} onSendMessage={handleSendMessage} />}
             {showMessageModal && <MessageModal recipient={showMessageModal} onClose={() => setShowMessageModal(null)} />}
             {showVipPromo && <VipPromoModal onClose={() => setShowVipPromo(false)} />}

@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 
 const it = {
@@ -61,7 +62,7 @@ const it = {
     venueNamePlaceholder: "Es: 'Paradise Club'",
     venueDescriptionLabel: "Descrizione",
     venueDescriptionPlaceholder: "Descrivi il tuo locale, l'atmosfera, il tipo di serate...",
-    venueAddressLabel: "Indirizzo",
+    venueAddressLabel: "Indrizzo",
     venueAddressPlaceholder: "Es: Via Roma 1, 00100 Roma, Italia",
     venueLogoLabel: "URL Logo (opzionale)",
     venueLogoPlaceholder: "https://.../logo.png",
@@ -131,6 +132,24 @@ const it = {
       cancel: "Annulla",
       saving: "Salvataggio...",
       saveChanges: "Salva Modifiche",
+      profileTab: "Profilo",
+      messagesTab: "Messaggi",
+      profileUpdated: "Profilo aggiornato!",
+      changePhoto: "Cambia Foto",
+      displayName: "Nome Visualizzato",
+      bio: "Bio",
+      select: "Seleziona...",
+      improveWithAI: "Migliora con AI",
+      improving: "Miglioro...",
+      bioSuggestionError: "Scrivi prima qualcosa nella bio per usare il suggerimento AI.",
+      bioSuggestionErrorAPI: "Errore dall'AI. Riprova.",
+      bioSuggestionSuccess: "Bio aggiornata con i suggerimenti dell'AI!",
+      loadingMessages: "Caricamento messaggi...",
+      noMessages: "Nessun messaggio. Inizia tu una conversazione!",
+      startConversation: "Inizia la conversazione!",
+      isTyping: "sta scrivendo...",
+      typeMessagePlaceholder: "Scrivi un messaggio...",
+      newMessageFrom: "Nuovo messaggio da"
   },
   recentCheckins: {
     title: "Ultimi Check-in"
@@ -214,9 +233,9 @@ const it = {
     title: "Pannello di Controllo Locale",
     detailsTab: "Dettagli Locale",
     eventsTab: "Gestione Eventi",
-    deleteVenueAccount: "Elimina Account Locale",
+    deleteVenueAccount: "Elimina il mio account",
     dangerZoneTitle: "Zona Pericolosa",
-    dangerZoneDescription: "Queste azioni sono permanenti. Procedi con cautela.",
+    dangerZoneDescription: "Questa azione è permanente.",
     noEventScheduled: "Nessun evento programmato.",
     addEvent: "Aggiungi",
     editEvent: "Modifica",
