@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, message, user_id } = req.body || {};
+    const { name, message, user_id, sent_at } = req.body || {};
     const now = new Date().toISOString();
 
     const transporter = nodemailer.createTransport({
@@ -27,7 +27,8 @@ export default async function handler(req, res) {
       `Mittente: ${name ?? "Anonimo"}\n` +
       `User ID: ${user_id ?? "(senza id)"}\n` +
       `Messaggio: ${message ?? "(nessun messaggio)"}\n` +
-      `Data/Ora: ${now}\n`;
+      `Data/Ora client: ${sent_at ?? "(n/a)"}\n` +
+      `Ricevuto dal relay: ${now}\n`;
 
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
@@ -39,13 +40,13 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       delivered_to: process.env.MAIL_TO,
-      at: now,
+      at: now
     });
   } catch (err) {
     console.error("adultmail-relay ERROR:", err);
     return res.status(500).json({
       ok: false,
-      error: String(err),
+      error: String(err)
     });
   }
 }
