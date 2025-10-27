@@ -1,7 +1,8 @@
-// FIX: Replaced the faulty remote type reference with the built-in 'deno.ns' library reference to resolve errors with the Deno global object.
-/// <reference lib="deno.ns" />
-
+// Supabase Edge Functions are Deno-based. This function uses `serve` from the standard
+// library for broader compatibility and assumes the `Deno` global for environment
+// variables is provided by the Supabase runtime environment.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 // CORS per permettere la chiamata dal browser
 const corsHeaders = {
@@ -11,7 +12,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-Deno.serve(async (req: Request) => {
+serve(async (req: Request) => {
   // Risposta immediata alle preflight OPTIONS
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });

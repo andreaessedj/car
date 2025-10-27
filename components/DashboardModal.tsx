@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from '../services/supabase';
@@ -44,6 +45,16 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
 
     // Delete account modal
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    useEffect(() => {
+        if (profile) {
+            setDisplayName(profile.display_name || '');
+            setBio(profile.bio || '');
+            setGender(profile.gender || '');
+            setStatus(profile.status || 'Single');
+            setAvatarPreview(profile.avatar_url || null);
+        }
+    }, [profile]);
 
     useEffect(() => {
         if(initialRecipient) {
