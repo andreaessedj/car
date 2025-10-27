@@ -11,15 +11,10 @@ export default async function handler(req, res) {
     const { name, message, user_id } = req.body || {};
     const now = new Date().toISOString();
 
-    // variabili ambiente su Vercel:
-    // process.env.GMAIL_USER = "savarese.andrea@gmail.com"
-    // process.env.GMAIL_PASS = "<app password 16 char>"
-    // process.env.MAIL_TO     = "adult.meet.real@gmail.com"
-
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
-      secure: true, // SSL
+      secure: true,
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_PASS,
