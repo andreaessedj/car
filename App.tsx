@@ -22,14 +22,17 @@ import VenueDashboard from './components/VenueDashboard';
 import { useTranslation } from './i18n';
 import { ChatBubbleLeftRightIcon, UserCircleIcon } from './components/icons';
 
-// 👇 NUOVI IMPORT
+// 👇 nuovi import step 3
 import MatchBrowserModal from './components/MatchBrowserModal';
 import { useHeartbeat } from './hooks/useHeartbeat';
+
+// 👇 nuovo import per i fake check-in
+import { generateFakeCheckin } from './services/fakeData';
 
 const App: React.FC = () => {
     const { t } = useTranslation();
 
-    // 💓 Tiene aggiornato profiles.last_active ogni ~60s
+    // heartbeat: aggiorna profiles.last_active dell'utente loggato
     useHeartbeat();
 
     // Modal states
@@ -38,14 +41,14 @@ const App: React.FC = () => {
     const [selectedCheckin, setSelectedCheckin] = useState<Checkin | null>(null);
     const [showDashboard, setShowDashboard] = useState(false);
     const [showUserProfile, setShowUserProfile] = useState<Profile | null>(null);
-    const [showMessageModal, setShowMessageModal] = useState<Profile | null>(null); // legacy support
+    const [showMessageModal, setShowMessageModal] = useState<Profile | null>(null); // legacy compat
     const [initialRecipient, setInitialRecipient] = useState<Profile | null>(null);
     const [showDisclaimer, setShowDisclaimer] = useState(!localStorage.getItem('disclaimerAccepted'));
     const [showVipPromo, setShowVipPromo] = useState(false);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
     const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
 
-    // 👇 NUOVO STATO: pannello Match
+    // pannello "Match"
     const [showMatchBrowser, setShowMatchBrowser] = useState(false);
 
     // Data states
@@ -63,6 +66,7 @@ const App: React.FC = () => {
 
     const { user, profile } = useAuth();
 
+    // canale presence realtime
     const presenceChannel = useMemo(() => user ? supabase.channel(`online-users`, {
         config: {
             presence: {
@@ -71,37 +75,28 @@ const App: React.FC = () => {
         },
     }) : null, [user]);
 
+    // stato online per l'utente corrente
     const isCurrentUserOnline = useMemo(() => {
         if (!user || onlineUsers.length === 0) return false;
         return onlineUsers.some(p => p.user_id === user.id);
     }, [user, onlineUsers]);
 
+    // --- fetchData AGGIORNATO CON FAKE CHECK-IN ---
     const fetchData = useCallback(async () => {
+        // 1. check-ins reali
         const { data: checkinsData, error: checkinsError } = await supabase
             .from('checkins')
             .select('*, profiles!user_id(*)')
             .order('created_at', { ascending: false })
             .limit(100);
 
-        if (checkinsError) console.error('Error fetching checkins:', checkinsError);
-        else setCheckins(checkinsData || []);
-        
+        // 2. venues reali
         const { data: venuesData, error: venuesError } = await supabase
             .from('venues')
             .select('*, profiles!inner(is_vip, vip_until)')
             .eq('profiles.profile_type', 'club');
-        
-        if (venuesError) console.error('Error fetching venues:', venuesError);
-        else {
-             const transformedVenues = venuesData?.map(v => ({
-                 ...v,
-                 is_vip: v.profiles.is_vip,
-                 vip_until: v.profiles.vip_until,
-                 profiles: null
-             })) || [];
-             setVenues(transformedVenues as Venue[]);
-        }
 
+        // 3. utenti recenti reali
         const { data: recentUsersData, error: recentUsersError } = await supabase
             .from('profiles')
             .select('*')
@@ -109,18 +104,63 @@ const App: React.FC = () => {
             .neq('profile_type', 'club')
             .limit(10);
 
-        if (recentUsersError) {
-            console.error('Error fetching recent users:', recentUsersError);
-        } else {
+        if (checkinsError) console.error('Error fetching checkins:', checkinsError);
+        if (venuesError) console.error('Error fetching venues:', venuesError);
+        if (recentUsersError) console.error('Error fetching recent users:', recentUsersError);
+
+        // venues trasformati (aggiungiamo is_vip, vip_until nel root oggetto Venue)
+        if (!venuesError && venuesData) {
+            const transformedVenues = venuesData.map(v => ({
+                ...v,
+                is_vip: v.profiles.is_vip,
+                vip_until: v.profiles.vip_until,
+                profiles: null
+            })) || [];
+            setVenues(transformedVenues as Venue[]);
+        }
+
+        // utenti recenti
+        if (!recentUsersError) {
             setRecentUsers(recentUsersData || []);
         }
 
-        if (checkinsData) {
-            const cities = ['All', ...new Set(checkinsData.map(c => c.city).filter(Boolean) as string[])];
-            setCityOptions(cities.map(c => ({ value: c, label: c })));
+        // --- FAKE CHECKINS LOGIC ---
+        const realCheckins = checkinsData || [];
+        const MIN_TOTAL = 30; // obiettivo minimo da mostrare in mappa/lista
+
+        let fakeCheckins: any[] = [];
+        if (realCheckins.length < MIN_TOTAL) {
+            const howMany = MIN_TOTAL - realCheckins.length;
+
+            fakeCheckins = Array.from({ length: howMany }).map((_, idx) => {
+                const base = generateFakeCheckin();
+
+                return {
+                    ...base,
+                    // id fittizio negativo per non collidere con PK reali
+                    id: -1 * (idx + 1),
+                    // finto timestamp (scalato di 5 minuti a risalire)
+                    created_at: new Date(Date.now() - (idx * 5 * 60 * 1000)).toISOString(),
+                    // struttura "profiles" simile alla query reale (per VIP badge ecc.)
+                    profiles: {
+                        is_vip: false,
+                        vip_until: null,
+                    }
+                };
+            });
         }
+
+        const combinedCheckins: any[] = [...realCheckins, ...fakeCheckins];
+
+        // aggiorna stato checkins
+        setCheckins(combinedCheckins as Checkin[]);
+
+        // aggiorna cityOptions in base ai check-in combinati
+        const cities = ['All', ...new Set(combinedCheckins.map(c => c.city).filter(Boolean) as string[])];
+        setCityOptions(cities.map(c => ({ value: c, label: c })));
     }, []);
 
+    // primo load + realtime per checkins, venues, profiles
     useEffect(() => {
         fetchData();
         const mainChannel = supabase.channel('public-changes')
@@ -134,23 +174,25 @@ const App: React.FC = () => {
         };
     }, [fetchData]);
 
-    // Effect for real-time messages and notifications
+    // realtime messaggi in arrivo → toast + apertura chat se clicchi
     useEffect(() => {
         if (!user) return;
 
         const handleNewMessage = (payload: { new: Message }) => {
             const newMessage = payload.new;
             
-            // Show toast only if dashboard is closed or not viewing this specific chat
-            const isChattingWithSender = initialRecipient?.id === newMessage.sender_id && showDashboard;
+            // se sto già chattando con chi mi scrive e la dashboard è aperta, niente toast
+            const isChattingWithSender =
+                initialRecipient?.id === newMessage.sender_id && showDashboard;
 
             if (!isChattingWithSender) {
                 const openChat = () => {
-                    supabase.from('profiles')
+                    supabase
+                        .from('profiles')
                         .select('*')
                         .eq('id', newMessage.sender_id)
                         .single()
-                        .then(({data}) => {
+                        .then(({ data }) => {
                             if (data) {
                                 setInitialRecipient(data);
                                 setShowDashboard(true);
@@ -160,20 +202,20 @@ const App: React.FC = () => {
                 };
                 
                 toast.custom((t) => (
-                     <div
+                    <div
                         onClick={openChat}
                         className={`${
-                        t.visible ? 'animate-enter' : 'animate-leave'
+                            t.visible ? 'animate-enter' : 'animate-leave'
                         } max-w-md w-full bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 cursor-pointer`}
                     >
                         <div className="flex-1 w-0 p-4">
                             <div className="flex items-start">
                                 <div className="flex-shrink-0 pt-0.5">
-                                     <UserCircleIcon className="h-10 w-10 text-gray-400" />
+                                    <UserCircleIcon className="h-10 w-10 text-gray-400" />
                                 </div>
                                 <div className="ml-3 flex-1">
                                     <p className="text-sm font-medium text-white">
-                                       {t('dashboard.newMessageFrom')} {newMessage.sender?.display_name || '...'}
+                                        {t('dashboard.newMessageFrom')} {newMessage.sender?.display_name || '...'}
                                     </p>
                                     <p className="mt-1 text-sm text-gray-400 truncate">
                                         {newMessage.content}
@@ -205,7 +247,7 @@ const App: React.FC = () => {
         };
     }, [user, showDashboard, initialRecipient, t]);
 
-    // Presence realtime (chi è online)
+    // presenza online / typing realtime
     useEffect(() => {
         if (!presenceChannel) return;
 
@@ -242,7 +284,7 @@ const App: React.FC = () => {
         };
     }, [presenceChannel, user]);
 
-    // Search bar live
+    // live search utenti
     useEffect(() => {
         if (searchQuery.trim().length > 2) {
             const searchUsers = async () => {
@@ -269,7 +311,7 @@ const App: React.FC = () => {
     };
 
     const handleSendMessage = (recipient: Profile) => {
-        setShowUserProfile(null); // close profile
+        setShowUserProfile(null); // Close user profile if open
         setInitialRecipient(recipient);
         setShowDashboard(true);
     };
@@ -284,6 +326,7 @@ const App: React.FC = () => {
         setShowDisclaimer(false);
     };
 
+    // Applica filtri (gender/city/VIP) sui check-in combinati
     const filteredCheckins = useMemo(() => {
         return checkins.filter(c => {
             const genderMatch =
@@ -297,12 +340,14 @@ const App: React.FC = () => {
 
             const vipMatch =
                 !filters.vipOnly ||
-                (c.profiles?.is_vip === true && new Date(c.profiles?.vip_until || 0) > new Date());
+                (c.profiles?.is_vip === true &&
+                 new Date(c.profiles?.vip_until || 0) > new Date());
 
             return genderMatch && cityMatch && vipMatch;
         });
     }, [checkins, filters]);
 
+    // slider ultimi check-in reali+fake (primi 10 dopo ordinamento fatto in fetchData)
     const recentCheckins = useMemo(() => checkins.slice(0, 10), [checkins]);
 
     return (
@@ -318,8 +363,10 @@ const App: React.FC = () => {
                 onAuthClick={() => setShowAuthModal(true)}
                 onDashboardClick={() => setShowDashboard(true)}
                 onBecomeVipClick={() => setShowVipPromo(true)}
-                // 👇 nuovo: apre la sezione Match
+
+                // nuovo: bottone Match nell'header
                 onMatchClick={() => setShowMatchBrowser(true)}
+
                 filters={filters}
                 setFilters={setFilters}
                 cityOptions={cityOptions}
@@ -340,11 +387,12 @@ const App: React.FC = () => {
                     flyToLocation={flyToLocation}
                 />
                 
-                {/* Guestbook: fisso su desktop, a pulsante su mobile */}
+                {/* Guestbook fisso su desktop */}
                 <div className="hidden lg:block">
                     <Guestbook isOpen={true} />
                 </div>
 
+                {/* Floating button guestbook su mobile */}
                 <button 
                     onClick={() => setIsGuestbookOpen(true)}
                     className="lg:hidden fixed bottom-28 right-4 z-20 bg-red-600 p-3 rounded-full shadow-lg text-white"
@@ -359,6 +407,7 @@ const App: React.FC = () => {
                     isMobile={true}
                 />
                 
+                {/* sliders in basso */}
                 <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-full">
                     <div className="flex flex-row space-x-4">
                         <div className="w-1/2">
@@ -376,7 +425,7 @@ const App: React.FC = () => {
                             </h3>
                             <RecentUsersSlider
                                 users={recentUsers}
-                                onUserClick={handleUserSearchSelect}
+                                onUserClick={setShowUserProfile}
                             />
                         </div>
                     </div>
@@ -446,7 +495,7 @@ const App: React.FC = () => {
                 <VipPromoModal onClose={() => setShowVipPromo(false)} />
             )}
 
-            {/* 👇 MODALE MATCH */}
+            {/* Modal Match (nuovo) */}
             {showMatchBrowser && (
                 <MatchBrowserModal
                     isOpen={showMatchBrowser}
