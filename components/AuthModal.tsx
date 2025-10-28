@@ -209,6 +209,24 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                         console.error("Venue creation failed after signup:", venueError);
                     }
                 }
+                if (data.user) {
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .upsert(
+                            {
+                                id: data.user.id,
+                                display_name: displayName.trim(),
+                                bio: bio.trim() || null,
+                                gender: profileType === 'user' ? gender : null,
+                                profile_type: profileType === 'venue' ? 'club' : 'user',
+                            },
+                            { onConflict: 'id' }
+                        );
+                if (profileError) {
+                    console.error('Profile upsert error:', profileError);
+                    toast.error('Errore salvataggio profilo'); // puoi metterlo in i18n se vuoi
+                }
+            }    
                 toast.success(t('auth.registerSuccess'));
                 onClose();
             }
