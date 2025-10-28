@@ -1,13 +1,9 @@
 // services/contactService.ts
-// Questa funzione viene chiamata dal ContactModal nel frontend.
-// Inoltra i dati alla edge function "contact-support" su Supabase,
-// che manda la mail via Gmail SMTP. NIENTE RESEND QUI.
+// Invia i dati del form Contatti alla Edge Function "contact-support"
+// La Edge Function poi spedisce l'email via Gmail SMTP in modo sicuro.
 
 const CONTACT_FUNCTION_URL =
-  "https://<PROJECT-REF>.functions.supabase.co/contact-support";
-// ^ Sostituisci <PROJECT-REF> con l'URL reale della tua funzione
-//   esattamente come te lo dà `supabase functions deploy`
-//   Deve finire con `/contact-support`
+  "https://seweuyiyvicoqvtgjwss.supabase.co/functions/v1/contact-support";
 
 export async function sendContactMessage({
   email,
@@ -32,6 +28,7 @@ export async function sendContactMessage({
 
   if (!res.ok) {
     const errText = await res.text();
+    console.error("Errore invio contatto:", errText);
     throw new Error(`Invio fallito: ${res.status} ${errText}`);
   }
 
