@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { XMarkIcon } from './icons';
-import { sendContactMessage } from '../services/contactService';
+import { sendContactMessage } from '../src/services/contactService';
 import { toast } from 'react-hot-toast';
 
 interface ContactModalProps {
