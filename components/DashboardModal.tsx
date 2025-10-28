@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from '../services/supabase';
@@ -11,6 +9,11 @@ import { useTranslation } from '../i18n';
 import DeleteAccountModal from './DeleteAccountModal';
 import ChatView from './ChatView';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+
+// 👇 NUOVI IMPORT
+import { useHeartbeat } from '../hooks/useHeartbeat';
+import { getOnlineStatus } from '../utils/getOnlineStatus';
+import { StatusChip } from './StatusChip';
 
 interface DashboardPanelProps {
     isOpen: boolean;
@@ -27,6 +30,9 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
     const { user, profile, refreshProfile } = useAuth();
     const [activeTab, setActiveTab] = useState<Tab>(initialRecipient ? 'messages' : 'profile');
     
+    // 👇 ATTIVA HEARTBEAT PER L'UTENTE LOGGATO
+    useHeartbeat();
+
     // Profile state
     const [displayName, setDisplayName] = useState(profile?.display_name || '');
     const [bio, setBio] = useState(profile?.bio || '');
@@ -217,7 +223,6 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
         fetchConversations(); // Refresh conversations list and unread status
     }
 
-
     return (
         <>
             <div 
@@ -291,7 +296,7 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-300">{t('dashboard.status')}</label>
+                                        <label className="block text.sm font-medium text-gray-300">{t('dashboard.status')}</label>
                                         <select value={status || 'Single'} onChange={e => setStatus(e.target.value as 'Single' | 'Coppia')} className="w-full bg-gray-700 p-2 rounded-md">
                                             <option value="Single">{t('dashboard.single')}</option>
                                             <option value="Coppia">{t('dashboard.couple')}</option>
@@ -328,8 +333,16 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                                                 const otherUser = msg.sender_id === user?.id ? msg.receiver : msg.sender;
                                                 if (!otherUser) return null;
                                                 const isUnread = unreadMessages.has(otherUser.id);
+
+                                                // 👇 calcolo stato online dell'altro utente
+                                                const otherStatus = getOnlineStatus(otherUser.last_active);
+
                                                 return (
-                                                    <li key={msg.id} onClick={() => handleSelectConversation(otherUser)} className="bg-gray-700 p-3 rounded-md flex justify-between items-center cursor-pointer hover:bg-gray-600 transition-colors">
+                                                    <li 
+                                                        key={msg.id} 
+                                                        onClick={() => handleSelectConversation(otherUser)} 
+                                                        className="bg-gray-700 p-3 rounded-md flex justify-between items-center cursor-pointer hover:bg-gray-600 transition-colors"
+                                                    >
                                                         <div className="flex items-center gap-3 overflow-hidden">
                                                             {otherUser.avatar_url ? (
                                                                 <img src={otherUser.avatar_url} alt={otherUser.display_name} className="h-10 w-10 rounded-full object-cover flex-shrink-0"/>
@@ -337,8 +350,21 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                                                                 <UserCircleIcon className="h-10 w-10 text-gray-500 flex-shrink-0"/>
                                                             )}
                                                             <div className="flex-1 overflow-hidden">
-                                                                <p className={`font-semibold truncate ${isUnread ? 'text-white' : 'text-gray-300'}`}>{otherUser.display_name}</p>
-                                                                <p className={`text-sm truncate ${isUnread ? 'text-white' : 'text-gray-400'}`}>{msg.content}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className={`font-semibold truncate ${isUnread ? 'text-white' : 'text-gray-300'}`}>
+                                                                        {otherUser.display_name}
+                                                                    </p>
+
+                                                                    {/* 👇 badge stato online/offline */}
+                                                                    <StatusChip 
+                                                                        label={otherStatus.label} 
+                                                                        online={otherStatus.online} 
+                                                                    />
+                                                                </div>
+
+                                                                <p className={`text-sm truncate ${isUnread ? 'text-white' : 'text-gray-400'}`}>
+                                                                    {msg.content}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
