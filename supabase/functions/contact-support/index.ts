@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Gestione preflight CORS (necessario per chiamare da frontend)
+  // Preflight CORS per le richieste OPTIONS dal browser
   if (req.method === "OPTIONS") {
     return new Response(null, {
       headers: corsHeaders,
@@ -32,8 +32,7 @@ serve(async (req) => {
       );
     }
 
-    // Ci aspettiamo un body tipo:
-    // { email: string, subject: string, message: string }
+    // Body atteso dal client
     const { email, subject, message } = await req.json();
 
     if (!email || !message) {
@@ -49,15 +48,15 @@ serve(async (req) => {
       );
     }
 
-    // Contenuto HTML della mail che riceverai tu
+    // Corpo della mail
     const htmlBody = `
       <p><strong>Da:</strong> ${email}</p>
       <p><strong>Oggetto utente:</strong> ${subject || "(nessun oggetto)"} </p>
       <p><strong>Messaggio:</strong></p>
-      <p>${(message || "").replace(/\n/g, "<br/>")}</p>
+      <p>${(message || "").replace(/\\n/g, "<br/>")}</p>
     `;
 
-    // Transport Gmail (stessa logica del progetto che funziona)
+    // Transport Gmail (SMTP via Nodemailer)
     const transporter = createTransport({
       service: "gmail",
       auth: {
@@ -66,7 +65,7 @@ serve(async (req) => {
       },
     });
 
-    // Invia email all'amministrazione
+    // Invio email all'amministrazione
     const info = await transporter.sendMail({
       from: `Adult-Meet Notifier <${GMAIL_USER}>`,
       to: "adult.meet.real@gmail.com",

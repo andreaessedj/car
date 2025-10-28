@@ -1,8 +1,13 @@
 // services/contactService.ts
-// Chiama la Edge Function "contact-support" per inviare la notifica email all'admin.
+// Questa funzione viene chiamata dal ContactModal nel frontend.
+// Inoltra i dati alla edge function "contact-support" su Supabase,
+// che manda la mail via Gmail SMTP. NIENTE RESEND QUI.
 
-const CONTACT_FUNCTION_URL = "https://<PROJECT-REF>.functions.supabase.co/contact-support";
-// ↑ sostituisci <PROJECT-REF> con quello reale del tuo progetto Supabase dopo il deploy.
+const CONTACT_FUNCTION_URL =
+  "https://<PROJECT-REF>.functions.supabase.co/contact-support";
+// ^ Sostituisci <PROJECT-REF> con l'URL reale della tua funzione
+//   esattamente come te lo dà `supabase functions deploy`
+//   Deve finire con `/contact-support`
 
 export async function sendContactMessage({
   email,
