@@ -4,11 +4,9 @@ import { supabase } from '../services/supabase';
 /**
  * useHeartbeat
  *
- * Aggiorna il campo `last_active` nella tabella `profiles`
- * ogni ~60 secondi per l'utente autenticato.
- *
- * Monta questo hook in un componente che viene renderizzato
- * solo quando l'utente è loggato (es Dashboard / Layout protetto).
+ * Aggiorna `profiles.last_active` ogni ~60s per l'utente loggato.
+ * Monta questo hook in un componente che è renderizzato solo dopo login
+ * (es. layout protetto, dashboard, ecc.).
  */
 export function useHeartbeat() {
   const intervalRef = useRef<number | null>(null);

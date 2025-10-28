@@ -1,11 +1,4 @@
-/**
- * getOnlineStatus
- *
- * Calcola lo stato online dell'utente partendo dal timestamp last_active.
- * Regola base:
- *  - Online se last_active <= 2 minuti fa
- *  - Altrimenti mostra "Ultimo accesso X minuti fa"
- */
+// Calcola lo stato online/offline a partire da last_active (timestamp)
 export function getOnlineStatus(lastActive?: string | null) {
   if (!lastActive) {
     return {

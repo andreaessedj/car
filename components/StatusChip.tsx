@@ -1,14 +1,6 @@
 import React from 'react';
 
-/**
- * StatusChip
- *
- * Piccolo badge con pallino verde/grigio + testo stato.
- *
- * Props:
- *  - label: stringa da mostrare ("Online", "Ultimo accesso X min fa")
- *  - online: boolean -> colora verde se true, grigio se false
- */
+// Badge stato online/offline
 export function StatusChip({
   label,
   online,

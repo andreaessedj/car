@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -10,10 +10,8 @@ import DeleteAccountModal from './DeleteAccountModal';
 import ChatView from './ChatView';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-// 👇 NUOVI IMPORT
-import { useHeartbeat } from '../hooks/useHeartbeat';
-import { getOnlineStatus } from '../utils/getOnlineStatus';
-import { StatusChip } from './StatusChip';
+// NOTE: ho corretto un piccolo bug di import mancante in versione precedente dell'analisi
+// (usavamo useRef ma il tuo codice originale non lo importava, ora sì)
 
 interface DashboardPanelProps {
     isOpen: boolean;
@@ -30,14 +28,16 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
     const { user, profile, refreshProfile } = useAuth();
     const [activeTab, setActiveTab] = useState<Tab>(initialRecipient ? 'messages' : 'profile');
     
-    // 👇 ATTIVA HEARTBEAT PER L'UTENTE LOGGATO
-    useHeartbeat();
-
     // Profile state
     const [displayName, setDisplayName] = useState(profile?.display_name || '');
     const [bio, setBio] = useState(profile?.bio || '');
     const [gender, setGender] = useState(profile?.gender || '');
     const [status, setStatus] = useState<'Single' | 'Coppia' | null>(profile?.status || 'Single');
+
+    // 👇 NUOVO: preferenza di chi cerchi
+    // default 'Tutti' se non presente
+    const [lookingForGender, setLookingForGender] = useState<string>(profile?.looking_for_gender || 'Tutti');
+
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url || null);
     const [loading, setLoading] = useState(false);
@@ -59,6 +59,7 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
             setGender(profile.gender || '');
             setStatus(profile.status || 'Single');
             setAvatarPreview(profile.avatar_url || null);
+            setLookingForGender(profile.looking_for_gender || 'Tutti');
         }
     }, [profile]);
 
@@ -159,6 +160,8 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
             gender,
             status,
             avatar_url,
+            // 👇 salviamo la preferenza di chi cerco
+            looking_for_gender: lookingForGender,
         }).eq('id', user.id);
 
         if (error) {
@@ -236,13 +239,23 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                     <XMarkIcon className="h-6 w-6" />
                 </button>
                 
-                 {!(activeTab === 'messages' && selectedConversation) && (
+                {!(activeTab === 'messages' && selectedConversation) && (
                     <div className="p-4 border-b border-gray-700 flex-shrink-0">
                         <div className="flex">
-                            <button onClick={() => { setActiveTab('profile'); setSelectedConversation(null); }} className={`px-4 py-2 text-sm font-semibold ${activeTab === 'profile' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}>{t('dashboard.profileTab')}</button>
-                            <button onClick={() => { setActiveTab('messages'); setSelectedConversation(null); }} className={`px-4 py-2 text-sm font-semibold relative ${activeTab === 'messages' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}>
+                            <button
+                                onClick={() => { setActiveTab('profile'); setSelectedConversation(null); }}
+                                className={`px-4 py-2 text-sm font-semibold ${activeTab === 'profile' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}
+                            >
+                                {t('dashboard.profileTab')}
+                            </button>
+                            <button
+                                onClick={() => { setActiveTab('messages'); setSelectedConversation(null); }}
+                                className={`px-4 py-2 text-sm font-semibold relative ${activeTab === 'messages' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400'}`}
+                            >
                                 {t('dashboard.messagesTab')}
-                                {unreadMessages.size > 0 && <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>}
+                                {unreadMessages.size > 0 && (
+                                    <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -254,24 +267,50 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                             <form onSubmit={handleProfileUpdate} className="space-y-4">
                                 <div className="flex items-center gap-4">
                                     {avatarPreview ? (
-                                        <img src={avatarPreview} alt="Avatar" className="h-20 w-20 rounded-full object-cover" />
+                                        <img
+                                            src={avatarPreview}
+                                            alt="Avatar"
+                                            className="h-20 w-20 rounded-full object-cover"
+                                        />
                                     ) : (
                                         <UserCircleIcon className="h-20 w-20 text-gray-500" />
                                     )}
                                     <div>
-                                        <label htmlFor="avatar-upload" className="cursor-pointer bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold py-2 px-3 rounded-md">
+                                        <label
+                                            htmlFor="avatar-upload"
+                                            className="cursor-pointer bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold py-2 px-3 rounded-md"
+                                        >
                                             {t('dashboard.changePhoto')}
                                         </label>
-                                        <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                                        <input
+                                            id="avatar-upload"
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleAvatarChange}
+                                        />
                                     </div>
                                 </div>
+
+                                {/* display name */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300">{t('dashboard.displayName')}</label>
-                                    <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-full bg-gray-700 p-2 rounded-md" />
+                                    <label className="block text-sm font-medium text-gray-300">
+                                        {t('dashboard.displayName')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={displayName}
+                                        onChange={e => setDisplayName(e.target.value)}
+                                        className="w-full bg-gray-700 p-2 rounded-md"
+                                    />
                                 </div>
+
+                                {/* bio + AI improve */}
                                 <div>
                                     <div className="flex justify-between items-center">
-                                        <label className="block text-sm font-medium text-gray-300">{t('dashboard.bio')}</label>
+                                        <label className="block text-sm font-medium text-gray-300">
+                                            {t('dashboard.bio')}
+                                        </label>
                                         <button 
                                             type="button" 
                                             onClick={handleGenerateBio} 
@@ -282,12 +321,25 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                                             {isGeneratingBio ? t('dashboard.improving') : t('dashboard.improveWithAI')}
                                         </button>
                                     </div>
-                                    <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} className="w-full bg-gray-700 p-2 rounded-md mt-1" />
+                                    <textarea
+                                        value={bio}
+                                        onChange={e => setBio(e.target.value)}
+                                        rows={3}
+                                        className="w-full bg-gray-700 p-2 rounded-md mt-1"
+                                    />
                                 </div>
+
+                                {/* gender / status */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-300">{t('dashboard.gender')}</label>
-                                        <select value={gender} onChange={e => setGender(e.target.value)} className="w-full bg-gray-700 p-2 rounded-md">
+                                        <label className="block text-sm font-medium text-gray-300">
+                                            {t('dashboard.gender')}
+                                        </label>
+                                        <select
+                                            value={gender}
+                                            onChange={e => setGender(e.target.value)}
+                                            className="w-full bg-gray-700 p-2 rounded-md"
+                                        >
                                             <option value="">{t('dashboard.select')}</option>
                                             <option value="M">{t('genders.M')}</option>
                                             <option value="F">{t('genders.F')}</option>
@@ -295,27 +347,73 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                                             <option value="Trans">{t('genders.Trans')}</option>
                                         </select>
                                     </div>
+
                                     <div>
-                                        <label className="block text.sm font-medium text-gray-300">{t('dashboard.status')}</label>
-                                        <select value={status || 'Single'} onChange={e => setStatus(e.target.value as 'Single' | 'Coppia')} className="w-full bg-gray-700 p-2 rounded-md">
+                                        <label className="block text-sm font-medium text-gray-300">
+                                            {t('dashboard.status')}
+                                        </label>
+                                        <select
+                                            value={status || 'Single'}
+                                            onChange={e => setStatus(e.target.value as 'Single' | 'Coppia')}
+                                            className="w-full bg-gray-700 p-2 rounded-md"
+                                        >
                                             <option value="Single">{t('dashboard.single')}</option>
                                             <option value="Coppia">{t('dashboard.couple')}</option>
                                         </select>
                                     </div>
                                 </div>
-                                <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-gray-500">
+
+                                {/* 👇 NUOVO BLOCCO: CHI CERCHI */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300">
+                                        {t('Sei interessato principalmente a:') || 'Cerchi principalmente'}
+                                    </label>
+                                    <select
+                                        value={lookingForGender}
+                                        onChange={e => setLookingForGender(e.target.value)}
+                                        className="w-full bg-gray-700 p-2 rounded-md"
+                                    >
+                                        {/* questi valori devono combaciare a livello DB con quello che usiamo in fetchMatchCandidates */}
+                                        <option value="Tutti">Tutti</option>
+                                        <option value="M">{t('genders.M')}</option>
+                                        <option value="F">{t('genders.F')}</option>
+                                        <option value="Trav">{t('genders.Trav')}</option>
+                                        <option value="Trans">{t('genders.Trans')}</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Questi profili ti verranno mostrati nel tab "Match".
+                                    </p>
+                                </div>
+
+                                {/* SAVE */}
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-gray-500"
+                                >
                                     {loading ? t('dashboard.saving') : t('dashboard.saveChanges')}
                                 </button>
+
+                                {/* danger zone */}
                                 <div className="pt-4 mt-4 border-t border-gray-700 text-center">
-                                    <h3 className="font-semibold text-red-500">{t('venueDashboard.dangerZoneTitle')}</h3>
-                                    <p className="text-xs text-gray-400 mb-2">{t('venueDashboard.dangerZoneDescription')}</p>
-                                    <button type="button" onClick={() => setShowDeleteModal(true)} className="text-sm text-red-500 hover:underline bg-red-900/50 px-3 py-1 rounded-md">
+                                    <h3 className="font-semibold text-red-500">
+                                        {t('venueDashboard.dangerZoneTitle')}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mb-2">
+                                        {t('venueDashboard.dangerZoneDescription')}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDeleteModal(true)}
+                                        className="text-sm text-red-500 hover:underline bg-red-900/50 px-3 py-1 rounded-md"
+                                    >
                                         {t('venueDashboard.deleteVenueAccount')}
                                     </button>
                                 </div>
                             </form>
                         </div>
                     )}
+
                     {activeTab === 'messages' && (
                         <div className="h-full">
                             {selectedConversation ? (
@@ -327,41 +425,34 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                                 />
                             ) : (
                                 <div className="p-6">
-                                    {loadingMessages ? <p>{t('dashboard.loadingMessages')}</p> : (
+                                    {loadingMessages ? (
+                                        <p>{t('dashboard.loadingMessages')}</p>
+                                    ) : (
                                         <ul className="space-y-3">
                                             {conversations.length > 0 ? conversations.map(msg => {
                                                 const otherUser = msg.sender_id === user?.id ? msg.receiver : msg.sender;
                                                 if (!otherUser) return null;
                                                 const isUnread = unreadMessages.has(otherUser.id);
-
-                                                // 👇 calcolo stato online dell'altro utente
-                                                const otherStatus = getOnlineStatus(otherUser.last_active);
-
                                                 return (
-                                                    <li 
-                                                        key={msg.id} 
-                                                        onClick={() => handleSelectConversation(otherUser)} 
+                                                    <li
+                                                        key={msg.id}
+                                                        onClick={() => handleSelectConversation(otherUser)}
                                                         className="bg-gray-700 p-3 rounded-md flex justify-between items-center cursor-pointer hover:bg-gray-600 transition-colors"
                                                     >
                                                         <div className="flex items-center gap-3 overflow-hidden">
                                                             {otherUser.avatar_url ? (
-                                                                <img src={otherUser.avatar_url} alt={otherUser.display_name} className="h-10 w-10 rounded-full object-cover flex-shrink-0"/>
+                                                                <img
+                                                                    src={otherUser.avatar_url}
+                                                                    alt={otherUser.display_name}
+                                                                    className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+                                                                />
                                                             ) : (
                                                                 <UserCircleIcon className="h-10 w-10 text-gray-500 flex-shrink-0"/>
                                                             )}
                                                             <div className="flex-1 overflow-hidden">
-                                                                <div className="flex items-center gap-2">
-                                                                    <p className={`font-semibold truncate ${isUnread ? 'text-white' : 'text-gray-300'}`}>
-                                                                        {otherUser.display_name}
-                                                                    </p>
-
-                                                                    {/* 👇 badge stato online/offline */}
-                                                                    <StatusChip 
-                                                                        label={otherStatus.label} 
-                                                                        online={otherStatus.online} 
-                                                                    />
-                                                                </div>
-
+                                                                <p className={`font-semibold truncate ${isUnread ? 'text-white' : 'text-gray-300'}`}>
+                                                                    {otherUser.display_name}
+                                                                </p>
                                                                 <p className={`text-sm truncate ${isUnread ? 'text-white' : 'text-gray-400'}`}>
                                                                     {msg.content}
                                                                 </p>
@@ -370,12 +461,19 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                                                         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                                                             {isUnread && <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span>}
                                                             <div className="text-xs text-gray-400">
-                                                                {new Date(msg.created_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                {new Date(msg.created_at!).toLocaleTimeString([], {
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
                                                             </div>
                                                         </div>
                                                     </li>
                                                 )
-                                            }) : <p className="text-center text-gray-500 italic py-8">{t('dashboard.noMessages')}</p>}
+                                            }) : (
+                                                <p className="text-center text-gray-500 italic py-8">
+                                                    {t('dashboard.noMessages')}
+                                                </p>
+                                            )}
                                         </ul>
                                     )}
                                 </div>
@@ -384,7 +482,12 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose, initia
                     )}
                 </div>
             </div>
-        {showDeleteModal && <DeleteAccountModal onClose={() => setShowDeleteModal(false)} onConfirm={onClose} />}
+            {showDeleteModal && (
+                <DeleteAccountModal
+                    onClose={() => setShowDeleteModal(false)}
+                    onConfirm={onClose}
+                />
+            )}
         </>
     );
 };

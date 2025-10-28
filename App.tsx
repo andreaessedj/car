@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import MapView from './components/MapView';
@@ -23,20 +22,31 @@ import VenueDashboard from './components/VenueDashboard';
 import { useTranslation } from './i18n';
 import { ChatBubbleLeftRightIcon, UserCircleIcon } from './components/icons';
 
+// 👇 NUOVI IMPORT
+import MatchBrowserModal from './components/MatchBrowserModal';
+import { useHeartbeat } from './hooks/useHeartbeat';
+
 const App: React.FC = () => {
     const { t } = useTranslation();
+
+    // 💓 Tiene aggiornato profiles.last_active ogni ~60s
+    useHeartbeat();
+
     // Modal states
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showCheckInModal, setShowCheckInModal] = useState(false);
     const [selectedCheckin, setSelectedCheckin] = useState<Checkin | null>(null);
     const [showDashboard, setShowDashboard] = useState(false);
     const [showUserProfile, setShowUserProfile] = useState<Profile | null>(null);
-    const [showMessageModal, setShowMessageModal] = useState<Profile | null>(null); // Kept for legacy compatibility if needed
+    const [showMessageModal, setShowMessageModal] = useState<Profile | null>(null); // legacy support
     const [initialRecipient, setInitialRecipient] = useState<Profile | null>(null);
     const [showDisclaimer, setShowDisclaimer] = useState(!localStorage.getItem('disclaimerAccepted'));
     const [showVipPromo, setShowVipPromo] = useState(false);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
     const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
+
+    // 👇 NUOVO STATO: pannello Match
+    const [showMatchBrowser, setShowMatchBrowser] = useState(false);
 
     // Data states
     const [checkins, setCheckins] = useState<Checkin[]>([]);
@@ -52,6 +62,7 @@ const App: React.FC = () => {
     const [flyToLocation, setFlyToLocation] = useState<[number, number] | null>(null);
 
     const { user, profile } = useAuth();
+
     const presenceChannel = useMemo(() => user ? supabase.channel(`online-users`, {
         config: {
             presence: {
@@ -82,7 +93,12 @@ const App: React.FC = () => {
         
         if (venuesError) console.error('Error fetching venues:', venuesError);
         else {
-             const transformedVenues = venuesData?.map(v => ({...v, is_vip: v.profiles.is_vip, vip_until: v.profiles.vip_until, profiles: null })) || [];
+             const transformedVenues = venuesData?.map(v => ({
+                 ...v,
+                 is_vip: v.profiles.is_vip,
+                 vip_until: v.profiles.vip_until,
+                 profiles: null
+             })) || [];
              setVenues(transformedVenues as Venue[]);
         }
 
@@ -130,13 +146,17 @@ const App: React.FC = () => {
 
             if (!isChattingWithSender) {
                 const openChat = () => {
-                    supabase.from('profiles').select('*').eq('id', newMessage.sender_id).single().then(({data}) => {
-                       if (data) {
-                           setInitialRecipient(data);
-                           setShowDashboard(true);
-                           toast.dismiss(newMessage.id.toString());
-                       }
-                    });
+                    supabase.from('profiles')
+                        .select('*')
+                        .eq('id', newMessage.sender_id)
+                        .single()
+                        .then(({data}) => {
+                            if (data) {
+                                setInitialRecipient(data);
+                                setShowDashboard(true);
+                                toast.dismiss(newMessage.id.toString());
+                            }
+                        });
                 };
                 
                 toast.custom((t) => (
@@ -185,6 +205,7 @@ const App: React.FC = () => {
         };
     }, [user, showDashboard, initialRecipient, t]);
 
+    // Presence realtime (chi è online)
     useEffect(() => {
         if (!presenceChannel) return;
 
@@ -221,6 +242,7 @@ const App: React.FC = () => {
         };
     }, [presenceChannel, user]);
 
+    // Search bar live
     useEffect(() => {
         if (searchQuery.trim().length > 2) {
             const searchUsers = async () => {
@@ -247,7 +269,7 @@ const App: React.FC = () => {
     };
 
     const handleSendMessage = (recipient: Profile) => {
-        setShowUserProfile(null); // Close user profile if open
+        setShowUserProfile(null); // close profile
         setInitialRecipient(recipient);
         setShowDashboard(true);
     };
@@ -264,9 +286,19 @@ const App: React.FC = () => {
 
     const filteredCheckins = useMemo(() => {
         return checkins.filter(c => {
-            const genderMatch = filters.gender === 'All' || c.gender === filters.gender || (filters.gender === 'Coppia' && c.status === 'Coppia');
-            const cityMatch = filters.city === 'All' || c.city === filters.city;
-            const vipMatch = !filters.vipOnly || (c.profiles?.is_vip === true && new Date(c.profiles?.vip_until || 0) > new Date());
+            const genderMatch =
+                filters.gender === 'All' ||
+                c.gender === filters.gender ||
+                (filters.gender === 'Coppia' && c.status === 'Coppia');
+
+            const cityMatch =
+                filters.city === 'All' ||
+                c.city === filters.city;
+
+            const vipMatch =
+                !filters.vipOnly ||
+                (c.profiles?.is_vip === true && new Date(c.profiles?.vip_until || 0) > new Date());
+
             return genderMatch && cityMatch && vipMatch;
         });
     }, [checkins, filters]);
@@ -278,7 +310,7 @@ const App: React.FC = () => {
             <Toaster position="bottom-center" toastOptions={{
                 className: 'bg-gray-700 text-white',
             }}/>
-            
+
             {showDisclaimer && <DisclaimerModal onAccept={handleDisclaimerAccept} />}
 
             <Header 
@@ -286,6 +318,8 @@ const App: React.FC = () => {
                 onAuthClick={() => setShowAuthModal(true)}
                 onDashboardClick={() => setShowDashboard(true)}
                 onBecomeVipClick={() => setShowVipPromo(true)}
+                // 👇 nuovo: apre la sezione Match
+                onMatchClick={() => setShowMatchBrowser(true)}
                 filters={filters}
                 setFilters={setFilters}
                 cityOptions={cityOptions}
@@ -306,55 +340,119 @@ const App: React.FC = () => {
                     flyToLocation={flyToLocation}
                 />
                 
-                {/* Guestbook hidden on small screens, button to show it */}
+                {/* Guestbook: fisso su desktop, a pulsante su mobile */}
                 <div className="hidden lg:block">
-                     <Guestbook isOpen={true} />
+                    <Guestbook isOpen={true} />
                 </div>
-                 <button 
+
+                <button 
                     onClick={() => setIsGuestbookOpen(true)}
                     className="lg:hidden fixed bottom-28 right-4 z-20 bg-red-600 p-3 rounded-full shadow-lg text-white"
                     aria-label={t('guestbook.title')}
                 >
                     <ChatBubbleLeftRightIcon className="h-6 w-6" />
                 </button>
-                <Guestbook isOpen={isGuestbookOpen} onClose={() => setIsGuestbookOpen(false)} isMobile={true}/>
+
+                <Guestbook
+                    isOpen={isGuestbookOpen}
+                    onClose={() => setIsGuestbookOpen(false)}
+                    isMobile={true}
+                />
                 
-                 <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-full">
+                <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-full">
                     <div className="flex flex-row space-x-4">
                         <div className="w-1/2">
-                             <h3 className="text-sm font-semibold text-red-400 mb-1 px-1 tracking-wide">{t('recentCheckins.title')}</h3>
-                            <RecentCheckinsSlider checkins={recentCheckins} onCheckinClick={setSelectedCheckin} />
+                            <h3 className="text-sm font-semibold text-red-400 mb-1 px-1 tracking-wide">
+                                {t('recentCheckins.title')}
+                            </h3>
+                            <RecentCheckinsSlider
+                                checkins={recentCheckins}
+                                onCheckinClick={setSelectedCheckin}
+                            />
                         </div>
                         <div className="w-1/2">
-                             <h3 className="text-sm font-semibold text-red-400 mb-1 px-1 tracking-wide">{t('recentUsers.title')}</h3>
-                            <RecentUsersSlider users={recentUsers} onUserClick={handleUserSearchSelect} />
+                            <h3 className="text-sm font-semibold text-red-400 mb-1 px-1 tracking-wide">
+                                {t('recentUsers.title')}
+                            </h3>
+                            <RecentUsersSlider
+                                users={recentUsers}
+                                onUserClick={handleUserSearchSelect}
+                            />
                         </div>
                     </div>
-                 </div>
+                </div>
             </main>
 
             <Footer />
             
             {/* Modals & Panels */}
-            {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
-            {showCheckInModal && <CheckInModal onClose={() => setShowCheckInModal(false)} onSuccess={() => { setShowCheckInModal(false); fetchData(); }} />}
-            {selectedCheckin && <CheckinDetailModal checkin={selectedCheckin} onClose={() => setSelectedCheckin(null)} />}
-            {selectedVenue && <VenueDetailModal venue={selectedVenue} onClose={() => setSelectedVenue(null)} />}
+            {showAuthModal && (
+                <AuthModal onClose={() => setShowAuthModal(false)} />
+            )}
+
+            {showCheckInModal && (
+                <CheckInModal
+                    onClose={() => setShowCheckInModal(false)}
+                    onSuccess={() => { setShowCheckInModal(false); fetchData(); }}
+                />
+            )}
+
+            {selectedCheckin && (
+                <CheckinDetailModal
+                    checkin={selectedCheckin}
+                    onClose={() => setSelectedCheckin(null)}
+                />
+            )}
+
+            {selectedVenue && (
+                <VenueDetailModal
+                    venue={selectedVenue}
+                    onClose={() => setSelectedVenue(null)}
+                />
+            )}
             
-            {profile?.profile_type === 'club' ? 
-                (showDashboard && <VenueDashboard onClose={handleDashboardClose} />) : 
-                (<DashboardPanel 
-                    isOpen={showDashboard}
-                    onClose={handleDashboardClose} 
-                    initialRecipient={initialRecipient} 
-                    presenceChannel={presenceChannel}
-                    onlineUsers={onlineUsers}
-                />)
+            {profile?.profile_type === 'club'
+                ? (
+                    showDashboard && (
+                        <VenueDashboard onClose={handleDashboardClose} />
+                    )
+                ) : (
+                    <DashboardPanel 
+                        isOpen={showDashboard}
+                        onClose={handleDashboardClose} 
+                        initialRecipient={initialRecipient} 
+                        presenceChannel={presenceChannel}
+                        onlineUsers={onlineUsers}
+                    />
+                )
             }
             
-            {showUserProfile && <UserProfileModal profile={showUserProfile} onClose={() => setShowUserProfile(null)} onSendMessage={handleSendMessage} />}
-            {showMessageModal && <MessageModal recipient={showMessageModal} onClose={() => setShowMessageModal(null)} />}
-            {showVipPromo && <VipPromoModal onClose={() => setShowVipPromo(false)} />}
+            {showUserProfile && (
+                <UserProfileModal
+                    profile={showUserProfile}
+                    onClose={() => setShowUserProfile(null)}
+                    onSendMessage={handleSendMessage}
+                />
+            )}
+
+            {showMessageModal && (
+                <MessageModal
+                    recipient={showMessageModal}
+                    onClose={() => setShowMessageModal(null)}
+                />
+            )}
+
+            {showVipPromo && (
+                <VipPromoModal onClose={() => setShowVipPromo(false)} />
+            )}
+
+            {/* 👇 MODALE MATCH */}
+            {showMatchBrowser && (
+                <MatchBrowserModal
+                    isOpen={showMatchBrowser}
+                    onClose={() => setShowMatchBrowser(false)}
+                />
+            )}
         </div>
     );
 };
