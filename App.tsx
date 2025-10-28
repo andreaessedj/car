@@ -22,12 +22,15 @@ import VenueDashboard from './components/VenueDashboard';
 import { useTranslation } from './i18n';
 import { ChatBubbleLeftRightIcon, UserCircleIcon } from './components/icons';
 
-// 👇 nuovi import step 3
+// nuovi import step 3
 import MatchBrowserModal from './components/MatchBrowserModal';
 import { useHeartbeat } from './hooks/useHeartbeat';
 
-// 👇 nuovo import per i fake check-in
+// nuovo import per i fake check-in
 import { generateFakeCheckin } from './services/fakeData';
+
+// nuovo import per Contatti
+import ContactModal from './components/ContactModal';
 
 const App: React.FC = () => {
     const { t } = useTranslation();
@@ -51,6 +54,9 @@ const App: React.FC = () => {
     // pannello "Match"
     const [showMatchBrowser, setShowMatchBrowser] = useState(false);
 
+    // pannello "Contatti"
+    const [showContact, setShowContact] = useState(false);
+
     // Data states
     const [checkins, setCheckins] = useState<Checkin[]>([]);
     const [venues, setVenues] = useState<Venue[]>([]);
@@ -67,13 +73,19 @@ const App: React.FC = () => {
     const { user, profile } = useAuth();
 
     // canale presence realtime
-    const presenceChannel = useMemo(() => user ? supabase.channel(`online-users`, {
-        config: {
-            presence: {
-                key: user.id,
-            },
-        },
-    }) : null, [user]);
+    const presenceChannel = useMemo(
+        () =>
+            user
+                ? supabase.channel(`online-users`, {
+                      config: {
+                          presence: {
+                              key: user.id,
+                          },
+                      },
+                  })
+                : null,
+        [user]
+    );
 
     // stato online per l'utente corrente
     const isCurrentUserOnline = useMemo(() => {
@@ -110,12 +122,13 @@ const App: React.FC = () => {
 
         // venues trasformati (aggiungiamo is_vip, vip_until nel root oggetto Venue)
         if (!venuesError && venuesData) {
-            const transformedVenues = venuesData.map(v => ({
-                ...v,
-                is_vip: v.profiles.is_vip,
-                vip_until: v.profiles.vip_until,
-                profiles: null
-            })) || [];
+            const transformedVenues =
+                venuesData.map(v => ({
+                    ...v,
+                    is_vip: v.profiles.is_vip,
+                    vip_until: v.profiles.vip_until,
+                    profiles: null,
+                })) || [];
             setVenues(transformedVenues as Venue[]);
         }
 
@@ -126,7 +139,7 @@ const App: React.FC = () => {
 
         // --- FAKE CHECKINS LOGIC ---
         const realCheckins = checkinsData || [];
-        const MIN_TOTAL = 30; // obiettivo minimo da mostrare in mappa/lista
+        const MIN_TOTAL = 30; // minimo di check-in da mostrare
 
         let fakeCheckins: any[] = [];
         if (realCheckins.length < MIN_TOTAL) {
@@ -139,13 +152,13 @@ const App: React.FC = () => {
                     ...base,
                     // id fittizio negativo per non collidere con PK reali
                     id: -1 * (idx + 1),
-                    // finto timestamp (scalato di 5 minuti a risalire)
-                    created_at: new Date(Date.now() - (idx * 5 * 60 * 1000)).toISOString(),
+                    // timestamp finto (scalato di 5 minuti a ritroso)
+                    created_at: new Date(Date.now() - idx * 5 * 60 * 1000).toISOString(),
                     // struttura "profiles" simile alla query reale (per VIP badge ecc.)
                     profiles: {
                         is_vip: false,
                         vip_until: null,
-                    }
+                    },
                 };
             });
         }
@@ -156,19 +169,37 @@ const App: React.FC = () => {
         setCheckins(combinedCheckins as Checkin[]);
 
         // aggiorna cityOptions in base ai check-in combinati
-        const cities = ['All', ...new Set(combinedCheckins.map(c => c.city).filter(Boolean) as string[])];
+        const cities = [
+            'All',
+            ...new Set(
+                combinedCheckins.map(c => c.city).filter(Boolean) as string[]
+            ),
+        ];
         setCityOptions(cities.map(c => ({ value: c, label: c })));
     }, []);
 
     // primo load + realtime per checkins, venues, profiles
     useEffect(() => {
         fetchData();
-        const mainChannel = supabase.channel('public-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, fetchData)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'venues' }, fetchData)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchData)
+        const mainChannel = supabase
+            .channel('public-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'checkins' },
+                fetchData
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'venues' },
+                fetchData
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'profiles' },
+                fetchData
+            )
             .subscribe();
-            
+
         return () => {
             supabase.removeChannel(mainChannel);
         };
@@ -180,10 +211,11 @@ const App: React.FC = () => {
 
         const handleNewMessage = (payload: { new: Message }) => {
             const newMessage = payload.new;
-            
+
             // se sto già chattando con chi mi scrive e la dashboard è aperta, niente toast
             const isChattingWithSender =
-                initialRecipient?.id === newMessage.sender_id && showDashboard;
+                initialRecipient?.id === newMessage.sender_id &&
+                showDashboard;
 
             if (!isChattingWithSender) {
                 const openChat = () => {
@@ -200,31 +232,36 @@ const App: React.FC = () => {
                             }
                         });
                 };
-                
-                toast.custom((t) => (
-                    <div
-                        onClick={openChat}
-                        className={`${
-                            t.visible ? 'animate-enter' : 'animate-leave'
-                        } max-w-md w-full bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 cursor-pointer`}
-                    >
-                        <div className="flex-1 w-0 p-4">
-                            <div className="flex items-start">
-                                <div className="flex-shrink-0 pt-0.5">
-                                    <UserCircleIcon className="h-10 w-10 text-gray-400" />
-                                </div>
-                                <div className="ml-3 flex-1">
-                                    <p className="text-sm font-medium text-white">
-                                        {t('dashboard.newMessageFrom')} {newMessage.sender?.display_name || '...'}
-                                    </p>
-                                    <p className="mt-1 text-sm text-gray-400 truncate">
-                                        {newMessage.content}
-                                    </p>
+
+                toast.custom(
+                    tEl => (
+                        <div
+                            onClick={openChat}
+                            className={`${
+                                tEl.visible ? 'animate-enter' : 'animate-leave'
+                            } max-w-md w-full bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 cursor-pointer`}
+                        >
+                            <div className="flex-1 w-0 p-4">
+                                <div className="flex items-start">
+                                    <div className="flex-shrink-0 pt-0.5">
+                                        <UserCircleIcon className="h-10 w-10 text-gray-400" />
+                                    </div>
+                                    <div className="ml-3 flex-1">
+                                        <p className="text-sm font-medium text-white">
+                                            {t('dashboard.newMessageFrom')}{' '}
+                                            {newMessage.sender
+                                                ?.display_name || '...'}
+                                        </p>
+                                        <p className="mt-1 text-sm text-gray-400 truncate">
+                                            {newMessage.content}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ), { id: newMessage.id.toString() });
+                    ),
+                    { id: newMessage.id.toString() }
+                );
             }
         };
 
@@ -238,7 +275,7 @@ const App: React.FC = () => {
                     table: 'messages',
                     filter: `receiver_id=eq.${user.id}`,
                 },
-                (payload) => handleNewMessage(payload as any)
+                payload => handleNewMessage(payload as any)
             )
             .subscribe();
 
@@ -268,11 +305,11 @@ const App: React.FC = () => {
             .on('presence', { event: 'sync' }, handlePresenceSync)
             .on('presence', { event: 'join' }, handlePresenceSync)
             .on('presence', { event: 'leave' }, handlePresenceSync)
-            .subscribe(async (status) => {
+            .subscribe(async status => {
                 if (status === 'SUBSCRIBED') {
                     await presenceChannel.track({
                         online_at: new Date().toISOString(),
-                        user_id: user?.id
+                        user_id: user?.id,
                     });
                 }
             });
@@ -335,13 +372,12 @@ const App: React.FC = () => {
                 (filters.gender === 'Coppia' && c.status === 'Coppia');
 
             const cityMatch =
-                filters.city === 'All' ||
-                c.city === filters.city;
+                filters.city === 'All' || c.city === filters.city;
 
             const vipMatch =
                 !filters.vipOnly ||
                 (c.profiles?.is_vip === true &&
-                 new Date(c.profiles?.vip_until || 0) > new Date());
+                    new Date(c.profiles?.vip_until || 0) > new Date());
 
             return genderMatch && cityMatch && vipMatch;
         });
@@ -352,21 +388,24 @@ const App: React.FC = () => {
 
     return (
         <div className="h-screen w-screen bg-gray-900 text-white relative flex flex-col overflow-hidden">
-            <Toaster position="bottom-center" toastOptions={{
-                className: 'bg-gray-700 text-white',
-            }}/>
+            <Toaster
+                position="bottom-center"
+                toastOptions={{
+                    className: 'bg-gray-700 text-white',
+                }}
+            />
 
-            {showDisclaimer && <DisclaimerModal onAccept={handleDisclaimerAccept} />}
+            {showDisclaimer && (
+                <DisclaimerModal onAccept={handleDisclaimerAccept} />
+            )}
 
-            <Header 
+            <Header
                 onCheckInClick={() => setShowCheckInModal(true)}
                 onAuthClick={() => setShowAuthModal(true)}
                 onDashboardClick={() => setShowDashboard(true)}
                 onBecomeVipClick={() => setShowVipPromo(true)}
-
                 // nuovo: bottone Match nell'header
                 onMatchClick={() => setShowMatchBrowser(true)}
-
                 filters={filters}
                 setFilters={setFilters}
                 cityOptions={cityOptions}
@@ -377,7 +416,7 @@ const App: React.FC = () => {
                 searchResults={searchResults}
                 onUserSearchSelect={handleUserSearchSelect}
             />
-            
+
             <main className="flex-grow relative">
                 <MapView
                     checkins={filteredCheckins}
@@ -386,14 +425,14 @@ const App: React.FC = () => {
                     onVenueClick={setSelectedVenue}
                     flyToLocation={flyToLocation}
                 />
-                
+
                 {/* Guestbook fisso su desktop */}
                 <div className="hidden lg:block">
                     <Guestbook isOpen={true} />
                 </div>
 
                 {/* Floating button guestbook su mobile */}
-                <button 
+                <button
                     onClick={() => setIsGuestbookOpen(true)}
                     className="lg:hidden fixed bottom-28 right-4 z-20 bg-red-600 p-3 rounded-full shadow-lg text-white"
                     aria-label={t('guestbook.title')}
@@ -406,7 +445,7 @@ const App: React.FC = () => {
                     onClose={() => setIsGuestbookOpen(false)}
                     isMobile={true}
                 />
-                
+
                 {/* sliders in basso */}
                 <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-full">
                     <div className="flex flex-row space-x-4">
@@ -432,8 +471,8 @@ const App: React.FC = () => {
                 </div>
             </main>
 
-            <Footer />
-            
+            <Footer onOpenContact={() => setShowContact(true)} />
+
             {/* Modals & Panels */}
             {showAuthModal && (
                 <AuthModal onClose={() => setShowAuthModal(false)} />
@@ -442,7 +481,10 @@ const App: React.FC = () => {
             {showCheckInModal && (
                 <CheckInModal
                     onClose={() => setShowCheckInModal(false)}
-                    onSuccess={() => { setShowCheckInModal(false); fetchData(); }}
+                    onSuccess={() => {
+                        setShowCheckInModal(false);
+                        fetchData();
+                    }}
                 />
             )}
 
@@ -459,23 +501,19 @@ const App: React.FC = () => {
                     onClose={() => setSelectedVenue(null)}
                 />
             )}
-            
-            {profile?.profile_type === 'club'
-                ? (
-                    showDashboard && (
-                        <VenueDashboard onClose={handleDashboardClose} />
-                    )
-                ) : (
-                    <DashboardPanel 
-                        isOpen={showDashboard}
-                        onClose={handleDashboardClose} 
-                        initialRecipient={initialRecipient} 
-                        presenceChannel={presenceChannel}
-                        onlineUsers={onlineUsers}
-                    />
-                )
-            }
-            
+
+            {profile?.profile_type === 'club' ? (
+                showDashboard && <VenueDashboard onClose={handleDashboardClose} />
+            ) : (
+                <DashboardPanel
+                    isOpen={showDashboard}
+                    onClose={handleDashboardClose}
+                    initialRecipient={initialRecipient}
+                    presenceChannel={presenceChannel}
+                    onlineUsers={onlineUsers}
+                />
+            )}
+
             {showUserProfile && (
                 <UserProfileModal
                     profile={showUserProfile}
@@ -495,11 +533,19 @@ const App: React.FC = () => {
                 <VipPromoModal onClose={() => setShowVipPromo(false)} />
             )}
 
-            {/* Modal Match (nuovo) */}
+            {/* Modal Match */}
             {showMatchBrowser && (
                 <MatchBrowserModal
                     isOpen={showMatchBrowser}
                     onClose={() => setShowMatchBrowser(false)}
+                />
+            )}
+
+            {/* Modal Contatti */}
+            {showContact && (
+                <ContactModal
+                    isOpen={showContact}
+                    onClose={() => setShowContact(false)}
                 />
             )}
         </div>

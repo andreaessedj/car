@@ -206,7 +206,7 @@ const ChatView: React.FC<ChatViewProps> = ({ recipient, onBack, presenceChannel,
                     <h3 className="font-bold text-lg">{recipient.display_name}</h3>
                     {!checkingMatch && !canChat && (
                         <p className="text-xs text-red-400 font-semibold">
-                            {t('dashboard.matchRequired', { defaultValue: 'Solo i match reciproci possono scriversi ❤️' })}
+                            {t('Solo se ottieni il match puoi scrivere a questo utente', { defaultValue: 'Solo i match reciproci possono scriversi ❤️' })}
                         </p>
                     )}
                 </div>
