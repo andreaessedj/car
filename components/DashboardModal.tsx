@@ -14,8 +14,8 @@ import {
 import { useTranslation } from '../i18n';
 import DeleteAccountModal from './DeleteAccountModal';
 import ChatView from './ChatView';
-import VisitorsTab from './src/VisitorsTab';
-import LikesReceivedTab from '.src/LikesReceivedTab';
+import VisitorsTab from './src/components/VisitorsTab';
+import LikesReceivedTab from './src/components/LikesReceivedTab';
 import { isVipActive } from '../utils/vip';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
