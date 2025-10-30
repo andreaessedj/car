@@ -10,6 +10,8 @@
     .btn{display:inline-block;margin-top:12px;padding:10px 16px;border-radius:10px;font-weight:700;border:2px solid #000;background:#ffdd00;color:#000;text-decoration:none}
     .muted{opacity:.75;font-size:12px;margin-top:8px}
   </style>
+  <!-- Evita di mettere cache di questa pagina -->
+  <meta http-equiv="Cache-Control" content="no-store" />
 </head>
 <body>
   <div class="card">
@@ -21,17 +23,20 @@
 
   <script>
     (function () {
-      // 1) Leggi i giorni (se ti serve in futuro)
-      const params = new URLSearchParams(location.search);
-      const days = parseInt(params.get('days') || '30', 10);
+      // Segnala all'app che sei appena tornato dalla conferma (opzionale per un toast)
+      try { sessionStorage.setItem('vip_just_activated', '1'); } catch(e) {}
 
-      // 2) (Opzionale) qui potresti chiamare una tua API per attivare il VIP lato server
+      // Forza un "fresh load" della SPA con un query param random per bypassare cache
+      var target = '/?r=' + Date.now();
 
-      // 3) Redireziona automaticamente all'app (home) tra 1.5s
-      //    Usando replace() eviti che l'utente torni su questa pagina col tasto "indietro"
+      // Usa replace per non “sporcare” la cronologia col passo intermedio
       setTimeout(function () {
-        window.location.replace('/');
-      }, 1500);
+        window.location.replace(target);
+      }, 600);
+
+      // Fallback sul bottone (se l’auto-redirect fosse bloccato)
+      var btn = document.getElementById('backBtn');
+      if (btn) btn.href = target;
     })();
   </script>
 </body>
