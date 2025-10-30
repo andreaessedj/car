@@ -150,11 +150,8 @@ const App: React.FC = () => {
 
         return {
           ...base,
-          // id fittizio negativo per non collidere con PK reali
           id: -1 * (idx + 1),
-          // timestamp finto (scalato di 5 minuti a ritroso)
           created_at: new Date(Date.now() - idx * 5 * 60 * 1000).toISOString(),
-          // struttura "profiles" simile alla query reale (per VIP badge ecc.)
           profiles: {
             is_vip: false,
             vip_until: null,
@@ -164,11 +161,8 @@ const App: React.FC = () => {
     }
 
     const combinedCheckins: any[] = [...realCheckins, ...fakeCheckins];
-
-    // aggiorna stato checkins
     setCheckins(combinedCheckins as Checkin[]);
 
-    // aggiorna cityOptions in base ai check-in combinati
     const cities = [
       'All',
       ...new Set(
@@ -211,8 +205,6 @@ const App: React.FC = () => {
 
     const handleNewMessage = (payload: { new: Message }) => {
       const newMessage = payload.new;
-
-      // se sto già chattando con chi mi scrive e la dashboard è aperta, niente toast
       const isChattingWithSender =
         initialRecipient?.id === newMessage.sender_id &&
         showDashboard;
@@ -237,9 +229,7 @@ const App: React.FC = () => {
           tEl => (
             <div
               onClick={openChat}
-              className={`${
-                tEl.visible ? 'animate-enter' : 'animate-leave'
-              } max-w-md w-full bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 cursor-pointer`}
+              className={`${tEl.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 cursor-pointer`}
             >
               <div className="flex-1 w-0 p-4">
                 <div className="flex items-start">
@@ -249,8 +239,7 @@ const App: React.FC = () => {
                   <div className="ml-3 flex-1">
                     <p className="text-sm font-medium text-white">
                       {t('dashboard.newMessageFrom')}{' '}
-                      {newMessage.sender
-                        ?.display_name || '...'}
+                      {newMessage.sender?.display_name || '...'}
                     </p>
                     <p className="mt-1 text-sm text-gray-400 truncate">
                       {newMessage.content}
@@ -348,7 +337,7 @@ const App: React.FC = () => {
   };
 
   const handleSendMessage = (recipient: Profile) => {
-    setShowUserProfile(null); // Close user profile if open
+    setShowUserProfile(null);
     setInitialRecipient(recipient);
     setShowDashboard(true);
   };
@@ -363,7 +352,6 @@ const App: React.FC = () => {
     setShowDisclaimer(false);
   };
 
-  // Applica filtri (gender/city/VIP) sui check-in combinati
   const filteredCheckins = useMemo(() => {
     return checkins.filter(c => {
       const genderMatch =
@@ -383,63 +371,53 @@ const App: React.FC = () => {
     });
   }, [checkins, filters]);
 
-  // slider ultimi check-in reali+fake (primi 10 dopo ordinamento fatto in fetchData)
   const recentCheckins = useMemo(() => checkins.slice(0, 10), [checkins]);
 
-  /**
-   * ✅ AUTO-ATTIVAZIONE VIP al rientro da BuyMeACoffee
-   * URL atteso: /?vip=1&days=30
-   * - aggiorna 'profiles' (is_vip, vip_until) per l'utente loggato
-   * - mostra un toast
-   * - ricarica i dati
-   * - pulisce l'URL (senza refresh)
-   */
+  // ✅ New VIP activation flow via sessionStorage flag (set by index.html)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const fromVip = params.get('vip') === '1';
-    if (!fromVip) return;
+    const raw = sessionStorage.getItem('vip_pending');
+    if (!raw) return;
+    sessionStorage.removeItem('vip_pending');
 
-    const daysParam = params.get('days');
-    const days = Number.isFinite(Number(daysParam)) ? parseInt(daysParam!, 10) : 30;
+    let days = 30;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Number.isFinite(parsed?.days) && parsed.days > 0) days = parsed.days;
+    } catch (e) {}
 
     (async () => {
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const { data: sessionData, error: sErr } = await supabase.auth.getSession();
+        if (sErr) console.error(sErr);
+        const authUser = sessionData?.session?.user;
         if (!authUser) {
-          toast.error(t('common.loginRequired') || 'Accedi per attivare il VIP');
+          toast.error('Accedi per attivare il VIP');
           return;
         }
 
         const now = new Date();
         const vipUntil = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
 
-        // Aggiorno la tabella 'profiles' (coerente col resto dell'app)
         const { error } = await supabase
           .from('profiles')
           .update({ is_vip: true, vip_until: vipUntil })
           .eq('id', authUser.id);
 
         if (error) {
-          console.error(error);
-          toast.error(t('common.error') || 'Errore durante attivazione VIP');
+          console.error('Errore attivazione VIP:', error);
+          toast.error('Errore durante attivazione VIP');
         } else {
-          toast.success(t('vip.activated') || `VIP attivato per ${days} giorni`);
+          toast.success(`VIP attivato per ${days} giorni`);
           fetchData();
         }
       } catch (e) {
         console.error(e);
-        toast.error(t('common.error') || 'Errore inatteso');
-      } finally {
-        // pulisce l'URL senza ricaricare
-        history.replaceState(null, '', window.location.pathname);
+        toast.error('Errore inatteso');
       }
     })();
-  }, [t, fetchData]);
+  }, [fetchData]);
 
-  /**
-   * 🛡️ Fallback anti-"solo sfondo":
-   * Se dopo 1.2s React non ha montato nulla nel root, ricarica una sola volta con query random.
-   */
+  // Fallback anti "solo sfondo"
   useEffect(() => {
     const timer = setTimeout(() => {
       const root = document.getElementById('root') || document.getElementById('app');
@@ -476,7 +454,6 @@ const App: React.FC = () => {
         onAuthClick={() => setShowAuthModal(true)}
         onDashboardClick={() => setShowDashboard(true)}
         onBecomeVipClick={() => setShowVipPromo(true)}
-        // nuovo: bottone Match nell'header
         onMatchClick={() => setShowMatchBrowser(true)}
         filters={filters}
         setFilters={setFilters}
@@ -498,12 +475,10 @@ const App: React.FC = () => {
           flyToLocation={flyToLocation}
         />
 
-        {/* Guestbook fisso su desktop */}
         <div className="hidden lg:block">
           <Guestbook isOpen={true} />
         </div>
 
-        {/* Floating button guestbook su mobile */}
         <button
           onClick={() => setIsGuestbookOpen(true)}
           className="lg:hidden fixed bottom-28 right-4 z-20 bg-red-600 p-3 rounded-full shadow-lg text-white"
@@ -518,7 +493,6 @@ const App: React.FC = () => {
           isMobile={true}
         />
 
-        {/* sliders in basso */}
         <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-full">
           <div className="flex flex-row space-x-4">
             <div className="w-1/2">
@@ -545,7 +519,6 @@ const App: React.FC = () => {
 
       <Footer onOpenContact={() => setShowContact(true)} />
 
-      {/* Modals & Panels */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
@@ -605,7 +578,6 @@ const App: React.FC = () => {
         <VipPromoModal onClose={() => setShowVipPromo(false)} />
       )}
 
-      {/* Modal Match */}
       {showMatchBrowser && (
         <MatchBrowserModal
           isOpen={showMatchBrowser}
@@ -613,7 +585,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Modal Contatti */}
       {showContact && (
         <ContactModal
           isOpen={showContact}

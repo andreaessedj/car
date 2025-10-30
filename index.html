@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- VIP interceptor: capture ?vip=1&days=30 BEFORE React boots, persist to sessionStorage, clean URL -->
+  <script>
+  (function () {
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('vip') === '1') {
+        var days = parseInt(qs.get('days') || '30', 10);
+        if (!Number.isFinite(days) || days <= 0) days = 30;
+        sessionStorage.setItem('vip_pending', JSON.stringify({ days: days, ts: Date.now() }));
+        // Clean URL and force a fresh load to avoid any bootstrap/cache edge cases
+        var clean = location.origin + location.pathname + '?r=' + Date.now();
+        location.replace(clean);
+      }
+    } catch (e) {
+      console.error('vip pre-boot error', e);
+    }
+  })();
+  </script>
+
+  <!-- keep your build-tag bump script -->
   <script>
   (function () {
     var KEY = 'build_tag';
@@ -14,103 +34,62 @@
       }
     } catch(e) {}
   })();
-</script>
+  </script>
 
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ADULT-MEET</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADULT-MEET</title>
+
+  <!-- leave Tailwind via CDN as requested -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
         crossorigin=""/>
-    <!-- Marker Cluster CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    <style>
-      .leaflet-container {
-        height: 100vh;
-        width: 100vw;
-      }
-      /* Custom scrollbar for Webkit browsers */
-      .custom-scrollbar::-webkit-scrollbar {
-        height: 8px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #ef4444; /* red-500 */
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #dc2626; /* red-600 */
-      }
-      
-      @keyframes bounce-short {
-        0%, 100% {
-          transform: translateY(-15%);
-          animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-        }
-        50% {
-          transform: translateY(0);
-          animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-        }
-      }
+  <!-- Marker Cluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <style>
+    .leaflet-container { height: 100vh; width: 100vw; }
+    .custom-scrollbar::-webkit-scrollbar { height: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #ef4444; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #dc2626; }
+    @keyframes bounce-short {
+      0%, 100% { transform: translateY(-15%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+      50% { transform: translateY(0); animation-timing-function: cubic-bezier(0,0,0.2,1); }
+    }
+    .animate-bounce-short { animation: bounce-short 1s infinite; }
+    .marker-cluster-small { background-color: rgba(220, 38, 38, 0.6); }
+    .marker-cluster-small div { background-color: rgba(239, 68, 68, 0.8); }
+    .marker-cluster-medium { background-color: rgba(185, 28, 28, 0.6); }
+    .marker-cluster-medium div { background-color: rgba(220, 38, 38, 0.8); }
+    .marker-cluster-large { background-color: rgba(127, 29, 29, 0.6); }
+    .marker-cluster-large div { background-color: rgba(185, 28, 28, 0.8); }
+    .marker-cluster div { color: #fff; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+  </style>
 
-      .animate-bounce-short {
-        animation: bounce-short 1s infinite;
-      }
-
-      /* Custom Theme for Marker Cluster */
-      .marker-cluster-small {
-          background-color: rgba(220, 38, 38, 0.6); /* red-600 */
-      }
-      .marker-cluster-small div {
-          background-color: rgba(239, 68, 68, 0.8); /* red-500 */
-      }
-
-      .marker-cluster-medium {
-          background-color: rgba(185, 28, 28, 0.6); /* red-700 */
-      }
-      .marker-cluster-medium div {
-          background-color: rgba(220, 38, 38, 0.8); /* red-600 */
-      }
-
-      .marker-cluster-large {
-          background-color: rgba(127, 29, 29, 0.6); /* red-900 */
-      }
-      .marker-cluster-large div {
-          background-color: rgba(185, 28, 28, 0.8); /* red-700 */
-      }
-      
-      .marker-cluster div {
-        color: #fff;
-        font-weight: bold;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-      }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react-hot-toast": "https://aistudiocdn.com/react-hot-toast@^2.6.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.74.0",
-    "leaflet": "https://aistudiocdn.com/leaflet@^1.9.4",
-    "react-leaflet": "https://aistudiocdn.com/react-leaflet@^5.0.0",
-    "react-leaflet-cluster": "https://aistudiocdn.com/react-leaflet-cluster@^2.1.0",
-    "nodemailer": "https://aistudiocdn.com/nodemailer@^7.0.10",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
-    "deno.ns": "https://aistudiocdn.com/deno.ns@^0.8.0"
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://aistudiocdn.com/react@^19.2.0",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+      "react/": "https://aistudiocdn.com/react@^19.2.0/",
+      "react-hot-toast": "https://aistudiocdn.com/react-hot-toast@^2.6.0",
+      "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.74.0",
+      "leaflet": "https://aistudiocdn.com/leaflet@^1.9.4",
+      "react-leaflet": "https://aistudiocdn.com/react-leaflet@^5.0.0",
+      "react-leaflet-cluster": "https://aistudiocdn.com/react-leaflet-cluster@^2.1.0",
+      "nodemailer": "https://aistudiocdn.com/nodemailer@^7.0.10",
+      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+      "deno.ns": "https://aistudiocdn.com/deno.ns@^0.8.0"
+    }
   }
-}
-</script>
+  </script>
 </head>
 <body class="bg-gray-900">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>
