@@ -20,47 +20,6 @@
   })();
   </script>
 
-  <!-- Pre-boot watchdog: if React doesn't mount, recover automatically (preserves sessionStorage) -->
-  <script>
-  (function(){
-    var start = Date.now();
-    function swKill(){
-      if ('serviceWorker' in navigator) {
-        try {
-          navigator.serviceWorker.getRegistrations().then(function(rs){
-            rs.forEach(function(r){ r.unregister(); });
-          });
-        } catch(e){}
-      }
-    }
-    function cacheKill(){
-      if ('caches' in window) {
-        try {
-          caches.keys().then(function(keys){
-            keys.forEach(function(k){ caches.delete(k); });
-          });
-        } catch(e){}
-      }
-    }
-    function ensureBoot(){
-      try{
-        var root = document.getElementById('root') || document.getElementById('app');
-        var booted = root && root.firstChild;
-        if (!booted && (Date.now()-start) > 1500) {
-          try { localStorage.removeItem('build_tag'); } catch(e) {}
-          swKill();
-          cacheKill();
-          // DO NOT clear sessionStorage (we need vip_pending)
-          location.replace('/?u=' + Date.now());
-          return;
-        }
-      }catch(e){}
-      setTimeout(ensureBoot, 300);
-    }
-    setTimeout(ensureBoot, 800);
-  })();
-  </script>
-
   <!-- keep your build-tag bump script -->
   <script>
   (function () {
@@ -82,7 +41,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ADULT-MEET</title>
 
-  <!-- Tailwind via CDN (as per user request) -->
+  <!-- leave Tailwind via CDN as requested -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
