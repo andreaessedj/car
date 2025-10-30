@@ -2,3 +2,12 @@
   "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "installCommand": "npm install --legacy-peer-deps"
 }
+
+{
+  "static": {
+    "include": ["*.html", "*.css", "*.js", "*.png", "*.jpg", "*.svg"]
+  },
+  "routes": [
+    { "src": "/vip-confirm\\.html", "dest": "/vip-confirm.html" }
+  ]
+}
