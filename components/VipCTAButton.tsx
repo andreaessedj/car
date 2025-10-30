@@ -1,15 +1,18 @@
 import React from "react";
 
+// ✅ METTI QUI il link esatto dell’Extra “VIP 1 mese – €1”
+// Esempio (se non hai il link dell’Extra): usa la pagina generale degli Extra
+const BMC_EXTRA_URL = "https://buymeacoffee.com/adultmeet/extras";
+
 type VipCTAButtonProps = {
-  days?: number; // default 30 (solo per futuro)
+  days?: number; // per futuri piani
   className?: string;
 };
 
 export default function VipCTAButton({ days = 30, className = "" }: VipCTAButtonProps) {
-  const href = "https://buymeacoffee.com/adultmeet";
   return (
     <a
-      href={href}
+      href={BMC_EXTRA_URL}
       target="_blank"
       rel="noopener noreferrer"
       className={
