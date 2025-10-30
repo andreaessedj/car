@@ -436,6 +436,28 @@ const App: React.FC = () => {
     })();
   }, [t, fetchData]);
 
+  /**
+   * 🛡️ Fallback anti-"solo sfondo":
+   * Se dopo 1.2s React non ha montato nulla nel root, ricarica una sola volta con query random.
+   */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const root = document.getElementById('root') || document.getElementById('app');
+      if (root && !root.firstChild) {
+        const stamp = 'reload_once';
+        try {
+          if (!sessionStorage.getItem(stamp)) {
+            sessionStorage.setItem(stamp, '1');
+            window.location.replace('/?v=' + Date.now());
+          }
+        } catch (e) {
+          window.location.replace('/?v=' + Date.now());
+        }
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="h-screen w-screen bg-gray-900 text-white relative flex flex-col overflow-hidden">
       <Toaster
