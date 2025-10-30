@@ -15,3 +15,10 @@ export const isVipActive = (profile: { is_vip?: boolean; vip_until?: string | nu
     
     return expirationDate > now;
 };
+
+
+export function addVipDays(days: number): string {
+  const now = new Date();
+  const until = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  return until.toISOString();
+}
