@@ -1,9 +1,6 @@
 {
   "buildCommand": "npm install --legacy-peer-deps && npm run build",
-  "installCommand": "npm install --legacy-peer-deps"
-}
-
-{
+  "installCommand": "npm install --legacy-peer-deps",
   "static": {
     "include": ["*.html", "*.css", "*.js", "*.png", "*.jpg", "*.svg"]
   },
