@@ -1,9 +1,4 @@
 {
   "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "installCommand": "npm install --legacy-peer-deps",
-  "rewrites": [
-    { "source": "/vip-confirm", "destination": "/vip-confirm.html" },
-    { "source": "/vip-confirm/", "destination": "/vip-confirm.html" },
-    { "source": "/vip-confirm.html", "destination": "/vip-confirm.html" }
-  ]
 }
