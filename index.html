@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+  (function () {
+    var KEY = 'build_tag';
+    var CURRENT = '2025-10-30-1'; // aggiorna ad ogni deploy importante
+    try {
+      var prev = localStorage.getItem(KEY);
+      if (prev !== CURRENT) {
+        localStorage.setItem(KEY, CURRENT);
+        var url = location.pathname + '?v=' + Date.now();
+        history.replaceState(null, '', url);
+      }
+    } catch(e) {}
+  })();
+</script>
+
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
