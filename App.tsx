@@ -381,14 +381,14 @@ const App: React.FC = () => {
     const raw = sessionStorage.getItem('vip_pending');
     if (!raw) return;
 
-    console.log('[VIP] vip_pending trovato:', raw);
+    console.log('[VIP] vip_pending:', raw);
     sessionStorage.removeItem('vip_pending');
 
     let days = 30;
     try {
       const parsed = JSON.parse(raw);
       if (Number.isFinite(parsed?.days) && parsed.days > 0) days = parsed.days;
-    } catch (e) {}
+    } catch {}
 
     (async () => {
       try {
@@ -397,13 +397,12 @@ const App: React.FC = () => {
         const authUser = sess?.session?.user;
         if (!authUser) {
           toast.error('Accedi per attivare il VIP');
-          console.warn('[VIP] Nessun utente loggato, stop attivazione.');
+          console.warn('[VIP] Nessun utente loggato → stop.');
           return;
         }
 
-        const now = new Date();
-        const vipUntil = new Date(now.getTime() + days * 86400000).toISOString();
-        console.log('[VIP] Attivo VIP per giorni:', days, 'fino a', vipUntil);
+        const vipUntil = new Date(Date.now() + days * 86400000).toISOString();
+        console.log('[VIP] Attivo VIP', { days, vipUntil, uid: authUser.id });
 
         const { error } = await supabase
           .from('profiles')
@@ -415,8 +414,7 @@ const App: React.FC = () => {
           toast.error('Errore durante attivazione VIP');
         } else {
           toast.success(`VIP attivato per ${days} giorni`);
-          // ricarico i dati, NON tocco l’URL
-          try { await fetchData(); } catch(e){}
+          try { await fetchData(); } catch (e) {}
         }
       } catch (e) {
         console.error('[VIP] Errore inatteso:', e);
@@ -424,6 +422,7 @@ const App: React.FC = () => {
       }
     })();
   }, [supabase, fetchData, toast]);
+
 
 
   // Fallback anti "solo sfondo"

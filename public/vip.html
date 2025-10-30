@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attivazione VIP…</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attivazione VIP…</title>
   <script>
   (function () {
     try {
@@ -11,12 +11,8 @@
       var days = parseInt(qs.get('days') || '30', 10);
       if (!Number.isFinite(days) || days <= 0) days = 30;
       sessionStorage.setItem('vip_pending', JSON.stringify({ days: days, ts: Date.now() }));
-      // una sola navigazione pulita alla home
-      window.location.replace('/');
-    } catch (e) {
-      // se succede qualcosa, almeno non rimaniamo bloccati
-      window.location.href = '/';
-    }
+      window.location.replace('/'); // una sola navigazione
+    } catch (e) { window.location.href = '/'; }
   })();
   </script>
   <style>body{margin:0;display:grid;place-items:center;height:100vh;background:#111;color:#fff;font-family:sans-serif}</style>
