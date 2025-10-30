@@ -374,9 +374,14 @@ const App: React.FC = () => {
   const recentCheckins = useMemo(() => checkins.slice(0, 10), [checkins]);
 
   // ✅ New VIP activation flow via sessionStorage flag (set by index.html)
+// ...i tuoi import in cima restano uguali
+
+// dentro il componente App:
   useEffect(() => {
     const raw = sessionStorage.getItem('vip_pending');
     if (!raw) return;
+
+    console.log('[VIP] vip_pending trovato:', raw);
     sessionStorage.removeItem('vip_pending');
 
     let days = 30;
@@ -387,16 +392,18 @@ const App: React.FC = () => {
 
     (async () => {
       try {
-        const { data: sessionData, error: sErr } = await supabase.auth.getSession();
-        if (sErr) console.error(sErr);
-        const authUser = sessionData?.session?.user;
+        const { data: sess, error: sErr } = await supabase.auth.getSession();
+        if (sErr) console.error('[VIP] getSession error:', sErr);
+        const authUser = sess?.session?.user;
         if (!authUser) {
           toast.error('Accedi per attivare il VIP');
+          console.warn('[VIP] Nessun utente loggato, stop attivazione.');
           return;
         }
 
         const now = new Date();
-        const vipUntil = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+        const vipUntil = new Date(now.getTime() + days * 86400000).toISOString();
+        console.log('[VIP] Attivo VIP per giorni:', days, 'fino a', vipUntil);
 
         const { error } = await supabase
           .from('profiles')
@@ -404,18 +411,20 @@ const App: React.FC = () => {
           .eq('id', authUser.id);
 
         if (error) {
-          console.error('Errore attivazione VIP:', error);
+          console.error('[VIP] Update error:', error);
           toast.error('Errore durante attivazione VIP');
         } else {
           toast.success(`VIP attivato per ${days} giorni`);
-          fetchData();
+          // ricarico i dati, NON tocco l’URL
+          try { await fetchData(); } catch(e){}
         }
       } catch (e) {
-        console.error(e);
+        console.error('[VIP] Errore inatteso:', e);
         toast.error('Errore inatteso');
       }
     })();
-  }, [fetchData]);
+  }, [supabase, fetchData, toast]);
+
 
   // Fallback anti "solo sfondo"
   useEffect(() => {
