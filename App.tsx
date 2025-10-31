@@ -26,7 +26,6 @@ import { useHeartbeat } from './hooks/useHeartbeat';
 import { generateFakeCheckin } from './services/fakeData';
 import ContactModal from './components/ContactModal';
 
-// 🔍 Debug log per verificare che i componenti siano importati correttamente
 console.log({
   VipPromoModal,
   ContactModal,
@@ -36,6 +35,7 @@ console.log({
 
 const App: React.FC = () => {
   const { t } = useTranslation();
+  const { user, profile, refreshProfile } = useAuth();
   useHeartbeat();
 
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -61,8 +61,6 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [flyToLocation, setFlyToLocation] = useState<[number, number] | null>(null);
-
-  const { user, profile } = useAuth();
 
   const presenceChannel = useMemo(
     () =>
@@ -141,7 +139,7 @@ const App: React.FC = () => {
     return () => supabase.removeChannel(mainChannel);
   }, [fetchData]);
 
-  // ✅ VIP Activation Flow
+  // ✅ VIP Activation Flow (aggiorna DB + profilo locale)
   useEffect(() => {
     if ((window as any).__vipHandled__) return;
     const raw = sessionStorage.getItem('vip_pending');
@@ -175,16 +173,17 @@ const App: React.FC = () => {
           toast.error('Errore durante attivazione VIP');
         } else {
           toast.success(`VIP attivato per ${days} giorni`);
-          await fetchData();
+          await refreshProfile(); // ✅ aggiorna subito lo stato utente locale
+          await fetchData(); // aggiorna anche le card
         }
       } catch (e) {
         console.error('[VIP] Errore inatteso:', e);
         toast.error('Errore inatteso');
       }
-    }, 100);
+    }, 200);
 
     return () => clearTimeout(t);
-  }, [supabase, fetchData, toast]);
+  }, [supabase, fetchData, refreshProfile, toast]);
 
   // Anti "solo sfondo"
   useEffect(() => {
@@ -217,7 +216,6 @@ const App: React.FC = () => {
 
   const recentCheckins = useMemo(() => checkins.slice(0, 10), [checkins]);
 
-  // ✅ Fix React #130: rendi sicuro il render della Dashboard
   const renderDashboard = () => {
     if (!profile) return null;
     if (profile.profile_type === 'club') {
@@ -237,11 +235,9 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-gray-900 text-white relative flex flex-col overflow-hidden">
       <Toaster position="bottom-center" toastOptions={{ className: 'bg-gray-700 text-white' }} />
-
       {showDisclaimer && (
         <DisclaimerModal onAccept={() => { localStorage.setItem('disclaimerAccepted', 'true'); setShowDisclaimer(false); }} />
       )}
-
       <Header
         onCheckInClick={() => setShowCheckInModal(true)}
         onAuthClick={() => setShowAuthModal(true)}
@@ -258,30 +254,13 @@ const App: React.FC = () => {
         searchResults={searchResults}
         onUserSearchSelect={p => { setShowUserProfile(p); setSearchQuery(''); setSearchResults([]); }}
       />
-
       <main className="flex-grow relative">
-        <MapView
-          checkins={filteredCheckins}
-          venues={venues}
-          onCheckinClick={setSelectedCheckin}
-          onVenueClick={setSelectedVenue}
-          flyToLocation={flyToLocation}
-        />
-
-        <div className="hidden lg:block">
-          <Guestbook isOpen={true} />
-        </div>
-
-        <button
-          onClick={() => setIsGuestbookOpen(true)}
-          className="lg:hidden fixed bottom-28 right-4 z-20 bg-red-600 p-3 rounded-full shadow-lg text-white"
-          aria-label={t('guestbook.title')}
-        >
+        <MapView checkins={filteredCheckins} venues={venues} onCheckinClick={setSelectedCheckin} onVenueClick={setSelectedVenue} flyToLocation={flyToLocation} />
+        <div className="hidden lg:block"><Guestbook isOpen={true} /></div>
+        <button onClick={() => setIsGuestbookOpen(true)} className="lg:hidden fixed bottom-28 right-4 z-20 bg-red-600 p-3 rounded-full shadow-lg text-white" aria-label={t('guestbook.title')}>
           <ChatBubbleLeftRightIcon className="h-6 w-6" />
         </button>
-
         <Guestbook isOpen={isGuestbookOpen} onClose={() => setIsGuestbookOpen(false)} isMobile={true} />
-
         <div className="absolute bottom-12 left-0 right-0 p-3 z-10 w-full lg:w-auto lg:max-w-full">
           <div className="flex flex-row space-x-4">
             <div className="w-1/2">
@@ -295,9 +274,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
-
       <Footer onOpenContact={() => setShowContact(true)} />
-
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       {showCheckInModal && <CheckInModal onClose={() => setShowCheckInModal(false)} onSuccess={fetchData} />}
       {selectedCheckin && <CheckinDetailModal checkin={selectedCheckin} onClose={() => setSelectedCheckin(null)} />}
