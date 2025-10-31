@@ -16,10 +16,10 @@ serve(async (req) => {
   }
 
   try {
-    const GMAIL_USER = Deno.env.get("GMAIL_USER")!;
-    const GMAIL_PASS = Deno.env.get("GMAIL_PASS")!;
+    const GMAIL_USER2 = Deno.env.get("GMAIL_USER2")!;
+    const GMAIL_PASS2 = Deno.env.get("GMAIL_PASS2")!;
 
-    if (!GMAIL_USER || !GMAIL_PASS) {
+    if (!GMAIL_USER2 || !GMAIL_PASS2) {
       return new Response(
         JSON.stringify({ error: "Missing email credentials on server." }),
         {
@@ -60,14 +60,14 @@ serve(async (req) => {
     const transporter = createTransport({
       service: "gmail",
       auth: {
-        user: GMAIL_USER,
-        pass: GMAIL_PASS,
+        user: GMAIL_USER2,
+        pass: GMAIL_PASS2,
       },
     });
 
     // Invio email all'amministrazione
     const info = await transporter.sendMail({
-      from: `Adult-Meet Notifier <${GMAIL_USER}>`,
+      from: `Adult-Meet Notifier <${GMAIL_USER2}>`,
       to: "adult.meet.real@gmail.com",
       subject: "Adult-Meet - Nuova Notifica",
       html: htmlBody,
