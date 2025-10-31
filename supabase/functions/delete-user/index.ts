@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Supabase Edge Functions are Deno-based. This function uses `serve` from the standard
 // library for broader compatibility and assumes the `Deno` global for environment
 // variables is provided by the Supabase runtime environment.

@@ -73,10 +73,22 @@ function generateNickname(gender: string, status: 'Single' | 'Coppia'): string {
 }
 
 export const generateFakeCheckin = () => {
-    const status = Math.random() > 0.3 ? 'Single' : 'Coppia';
-    const gender = status === 'Coppia' ? 'Coppia' : (Math.random() > 0.5 ? 'M' : 'F');
-    const nickname = generateNickname(gender, status);
+    const isCouple = Math.random() < 0.3; // ~30% chance of being a couple
+    const status: 'Single' | 'Coppia' = isCouple ? 'Coppia' : 'Single';
+    
+    let gender: string | null;
+    let nickname: string;
 
+    if (isCouple) {
+        // For couples, status is 'Coppia', and the gender field is typically null in the database.
+        gender = null;
+        nickname = generateNickname('Coppia', status); // The first argument is ignored by generateNickname when status is 'Coppia'
+    } else {
+        // For singles, assign a gender
+        gender = Math.random() > 0.5 ? 'M' : 'F';
+        nickname = generateNickname(gender, status);
+    }
+    
     const city = getRandomElement(cities);
     // Add small random offset to city coordinates to spread markers
     const lat = city.lat + (Math.random() - 0.5) * 0.1; // Approx +/- 5.5 km
@@ -90,7 +102,7 @@ export const generateFakeCheckin = () => {
         lon: lon,
         city: city.name,
         photo: null,
-        gender: status === 'Coppia' ? null : gender,
+        gender: gender,
         status: status,
         user_id: null,
     };
