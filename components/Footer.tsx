@@ -47,6 +47,15 @@ const Footer: React.FC<FooterProps> = ({ onOpenContact }) => {
             >
               Contatti
             </button>
+            <span className="text-gray-600">|</span>
+            <a
+              href="https://www.instagram.com/adultmeet"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-pink-400 hover:text-pink-300 font-semibold hover:underline"
+            >
+              Instagram
+            </a>
           </div>
         </div>
       </footer>
