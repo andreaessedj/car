@@ -1,6 +1,3 @@
-
-
-
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 
 const it = {
@@ -211,6 +208,18 @@ const it = {
     feature3: "Profilo in cima alle liste",
     feature4: "Filtro per vedere solo i VIP",
     footer: "Funzionalità VIP in arrivo prossimamente!"
+  },
+  vipInvitation: {
+    title: "Sblocca il Tuo Potenziale!",
+    subtitle: "Passa a VIP per solo 1€ e goditi 30 giorni di vantaggi esclusivi.",
+    feature1: "Messaggi privati illimitati",
+    feature2: "Check-in in evidenza sulla mappa",
+    feature3: "Badge VIP esclusivo sul profilo",
+    feature4: "Filtra la mappa per vedere solo i VIP",
+    acceptButton: "Diventa VIP Ora a 1€",
+    declineButton: "Forse più tardi",
+    mustRegister: "Per diventare VIP devi prima creare un account gratuito.",
+    registerNow: "Registrati Ora"
   },
   vip: {
     active: "Utente VIP",

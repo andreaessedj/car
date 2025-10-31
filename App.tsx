@@ -25,6 +25,8 @@ import MatchBrowserModal from './components/MatchBrowserModal';
 import { useHeartbeat } from './hooks/useHeartbeat';
 import { generateFakeCheckin } from './services/fakeData';
 import ContactModal from './components/ContactModal';
+import VipInvitationModal from './components/VipInvitationModal';
+import { isVipActive } from './utils/vip';
 
 console.log({
   VipPromoModal,
@@ -51,6 +53,7 @@ const App: React.FC = () => {
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [showMatchBrowser, setShowMatchBrowser] = useState(false);
   const [showContact, setShowContact] = useState(false);
+  const [showVipInvitation, setShowVipInvitation] = useState(false);
 
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -184,6 +187,21 @@ const App: React.FC = () => {
 
     return () => clearTimeout(t);
   }, [supabase, fetchData, refreshProfile, toast]);
+  
+  // Show VIP invitation modal after 10 seconds
+  useEffect(() => {
+    // Don't show if disclaimer is still open, user is already VIP, or invitation was already closed this session
+    if (showDisclaimer || isVipActive(profile) || sessionStorage.getItem('vipInvitationClosed')) {
+        return;
+    }
+
+    const timer = setTimeout(() => {
+        setShowVipInvitation(true);
+    }, 10000); // 10 seconds
+
+    return () => clearTimeout(timer);
+  }, [profile, showDisclaimer]);
+
 
   // Anti "solo sfondo"
   useEffect(() => {
@@ -237,6 +255,25 @@ const App: React.FC = () => {
       <Toaster position="bottom-center" toastOptions={{ className: 'bg-gray-700 text-white' }} />
       {showDisclaimer && (
         <DisclaimerModal onAccept={() => { localStorage.setItem('disclaimerAccepted', 'true'); setShowDisclaimer(false); }} />
+      )}
+      {showVipInvitation && (
+        <VipInvitationModal
+          profile={profile}
+          onAccept={() => {
+              setShowVipInvitation(false);
+              setShowVipPromo(true);
+              sessionStorage.setItem('vipInvitationClosed', 'true');
+          }}
+          onClose={() => {
+              setShowVipInvitation(false);
+              sessionStorage.setItem('vipInvitationClosed', 'true');
+          }}
+          onRegister={() => {
+              setShowVipInvitation(false);
+              setShowAuthModal(true);
+              sessionStorage.setItem('vipInvitationClosed', 'true');
+          }}
+        />
       )}
       <Header
         onCheckInClick={() => setShowCheckInModal(true)}
