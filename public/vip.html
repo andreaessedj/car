@@ -1,23 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Attivazione VIP…</title>
-  <script>
-  (function () {
-    try {
-      var qs = new URLSearchParams(location.search);
-      var days = parseInt(qs.get('days') || '30', 10);
-      if (!Number.isFinite(days) || days <= 0) days = 30;
-      sessionStorage.setItem('vip_pending', JSON.stringify({ days: days, ts: Date.now() }));
-      window.location.replace('/'); // una sola navigazione
-    } catch (e) { window.location.href = '/'; }
-  })();
-  </script>
-  <style>body{margin:0;display:grid;place-items:center;height:100vh;background:#111;color:#fff;font-family:sans-serif}</style>
-</head>
-<body>
-  <div>Attivazione VIP in corso…</div>
-</body>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Attivazione VIP...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        margin: 0;
+        background: radial-gradient(circle at center, #000, #111);
+        color: white;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+      }
+      h1 { color: #ff0040; }
+    </style>
+  </head>
+  <body>
+    <h1>Attivazione VIP in corso...</h1>
+    <p>Verrai reindirizzato tra pochi istanti</p>
+    <script>
+      try {
+        const url = new URL(window.location.href);
+        const days = parseInt(url.searchParams.get("days")) || 30;
+        sessionStorage.setItem("vip_pending", JSON.stringify({ days }));
+        console.log("[VIP] Flag impostato per", days, "giorni");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 400);
+      } catch (e) {
+        console.error("[VIP] Errore nel reindirizzamento", e);
+      }
+    </script>
+  </body>
 </html>
