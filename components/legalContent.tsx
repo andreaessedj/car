@@ -81,25 +81,34 @@ export const RulesContent = () => (
         <p className="mb-4">Ultimo aggiornamento: Luglio 2024</p>
         
         <h3 className="text-xl font-semibold text-white mb-2">Introduzione</h3>
-        <p className="mb-4">Benvenuto su ADULT-MEET. Questa pagina illustra il funzionamento della nostra piattaforma e le regole da seguire per garantire un'esperienza sicura e piacevole per tutti. ADULT-MEET è un luogo d'incontro per un pubblico adulto e consapevole, basato su check-in geografici in tempo reale.</p>
+        <p className="mb-4">Benvenuto su ADULT-MEET. Questo regolamento illustra il funzionamento della nostra piattaforma e le regole da seguire per garantire un'esperienza sicura e piacevole. ADULT-MEET è un luogo d'incontro per un pubblico adulto e consapevole, basato su check-in geografici in tempo reale e un sistema di "match" per favorire interazioni consensuali.</p>
 
         <h3 className="text-xl font-semibold text-white mb-2">Come Funziona il Sito</h3>
         <ul className="list-disc list-inside mb-4 space-y-3">
             <li>
-                <strong>La Mappa:</strong> Il cuore della piattaforma è la mappa interattiva. Qui puoi visualizzare i "check-in" degli altri utenti, che rappresentano la loro presenza in una determinata area. Ogni check-in rimane visibile per 24 ore, garantendo che le informazioni siano sempre aggiornate.
+                <strong>La Mappa:</strong> Il cuore della piattaforma è la mappa interattiva. Qui puoi visualizzare i "check-in" degli altri utenti, che rappresentano la loro presenza in una determinata area. Ogni check-in rimane visibile per 24 ore, garantendo che le informazioni siano sempre fresche.
             </li>
             <li>
-                <strong>Il Check-in:</strong> Puoi segnalare la tua presenza creando un check-in. Puoi farlo come utente anonimo o registrato. Dovrai fornire un nickname, una breve descrizione di cosa cerchi, e posizionare un puntatore sulla mappa. Puoi anche aggiungere una foto (opzionale).
+                <strong>Il Check-in:</strong> Puoi segnalare la tua presenza creando un check-in, sia come utente anonimo che registrato. Dovrai fornire un nickname, una descrizione e posizionare un puntatore sulla mappa. Puoi anche aggiungere una foto (opzionale).
             </li>
             <li>
-                <strong>Profili Utente:</strong> La registrazione è gratuita e ti permette di avere un profilo persistente con foto (avatar), biografia e altre informazioni. I check-in effettuati da utente registrato saranno collegati al tuo profilo.
+                <strong>Profili Utente e Locali:</strong> La registrazione è gratuita e ti permette di avere un profilo persistente con foto, biografia e altre informazioni. Esistono due tipi di profili: <strong>Utente</strong> (per persone singole o coppie) e <strong>Locale/Club</strong> (per attività che possono anche pubblicare eventi settimanali).
             </li>
             <li>
-                <strong>Interazione:</strong> Puoi interagire con gli altri in diversi modi: cliccando su un pin per vedere i dettagli, lasciando commenti pubblici sotto un check-in, o inviando messaggi privati agli utenti registrati.
+                <strong>Il Guestbook:</strong> È una bacheca pubblica dove chiunque può lasciare un messaggio per l'intera community del sito, visibile a tutti.
             </li>
              <li>
-                <strong>Guestbook:</strong> È una bacheca pubblica dove chiunque può lasciare un messaggio per l'intera community del sito.
+                <strong>Commenti Pubblici:</strong> Puoi lasciare commenti visibili a tutti sotto i check-in degli altri utenti.
             </li>
+        </ul>
+
+        <h3 className="text-xl font-semibold text-white mb-2">Il Sistema di Interazione: Il "Match"</h3>
+        <p className="mb-4">Per garantire che le conversazioni private avvengano solo tra persone reciprocamente interessate, abbiamo introdotto un sistema basato sul "match":</p>
+        <ul className="list-disc list-inside mb-4 space-y-2">
+            <li><strong>Esplora i Profili:</strong> Puoi trovare altri utenti sulla mappa o tramite la funzione <strong>"Match"</strong>, che ti suggerisce profili compatibili.</li>
+            <li><strong>Esprimi Interesse (Like):</strong> Se un profilo ti interessa, puoi cliccare sul pulsante "Mi interessa ❤️". Questa azione è privata.</li>
+            <li><strong>Ottieni un Match:</strong> Se anche l'altra persona esprime interesse per te, si crea un <strong>Match</strong>! Entrambi riceverete una notifica.</li>
+            <li><strong>Chat Privata:</strong> Solo dopo aver ottenuto un match potrete iniziare a scambiarvi messaggi privati. <strong>Non è possibile scrivere a un utente senza un match reciproco.</strong></li>
         </ul>
 
         <h3 className="text-xl font-semibold text-white mb-2">Utenti Standard vs. Utenti VIP</h3>
@@ -109,24 +118,25 @@ export const RulesContent = () => (
             <h4 className="text-lg font-bold text-white mb-2">👤 Utente Standard (Gratuito)</h4>
             <ul className="list-disc list-inside space-y-2">
                 <li>Creare un account e personalizzare il proprio profilo.</li>
-                <li>Effettuare check-in sulla mappa (sia da registrato che da anonimo).</li>
-                <li>Visualizzare tutti i check-in e i profili degli altri utenti.</li>
-                <li>Lasciare commenti pubblici sui check-in.</li>
-                <li>Utilizzare il Guestbook.</li>
-                <li><strong>Limitazione:</strong> È possibile inviare un massimo di <strong>30 messaggi privati al giorno</strong>.</li>
+                <li>Effettuare check-in sulla mappa.</li>
+                <li>Visualizzare tutti i check-in e i profili.</li>
+                <li>Usare la funzione "Match" per scoprire nuovi profili.</li>
+                <li>Esprimere interesse (Like) verso altri utenti.</li>
+                <li><strong>Chattare illimitatamente con i propri Match.</strong></li>
+                <li>Lasciare commenti pubblici e usare il Guestbook.</li>
             </ul>
         </div>
         
         <div className="p-4 bg-yellow-900/30 border border-yellow-400/50 rounded-lg">
-             <h4 className="text-lg font-bold text-yellow-300 mb-2">⭐ Utente VIP (Prossimamente)</h4>
+             <h4 className="text-lg font-bold text-yellow-300 mb-2">⭐ Utente VIP</h4>
             <p className="mb-2">L'utente VIP ha accesso a vantaggi esclusivi pensati per massimizzare la visibilità e le possibilità di interazione:</p>
             <ul className="list-disc list-inside space-y-2">
                 <li>Tutti i vantaggi dell'utente Standard.</li>
-                <li><strong>Messaggi Privati Illimitati:</strong> Nessun limite giornaliero all'invio di messaggi.</li>
-                <li><strong>Check-in in Evidenza:</strong> I tuoi pin sulla mappa avranno una grafica speciale (un anello dorato animato) per risaltare e attrarre più attenzione.</li>
-                <li><strong>Profilo in Evidenza:</strong> Il tuo profilo apparirà in cima alle liste, come quella degli "Ultimi Utenti".</li>
+                <li><strong>Check-in in Evidenza:</strong> I tuoi pin sulla mappa avranno una grafica speciale (un anello dorato animato) per risaltare.</li>
+                <li><strong>Badge VIP Esclusivo:</strong> Un'icona a forma di stella dorata apparirà accanto al tuo nome in tutto il sito.</li>
                 <li><strong>Filtri Avanzati:</strong> Potrai filtrare la mappa per visualizzare esclusivamente i check-in degli altri utenti VIP.</li>
-                <li><strong>Badge VIP Esclusivo:</strong> Un'icona a forma di stella dorata apparirà accanto al tuo nome in ogni sezione del sito (profilo, check-in, messaggi, guestbook).</li>
+                <li><strong>Scopri chi ti ha messo "Like":</strong> Guarda la lista degli utenti che hanno espresso interesse per te e decidi se ricambiare per creare un match istantaneo.</li>
+                 <li><strong>Scopri chi ha visitato il tuo profilo:</strong> Guarda la lista degli utenti che hanno visualizzato il tuo profilo.</li>
             </ul>
         </div>
 
@@ -135,10 +145,10 @@ export const RulesContent = () => (
         <ul className="list-disc list-inside mb-4 space-y-2">
             <li><strong>Età Minima:</strong> È severamente vietato l'accesso ai minori di 18 anni.</li>
             <li><strong>Rispetto Reciproco:</strong> Non sono tollerati insulti, molestie, discorsi d'odio, minacce o qualsiasi forma di comportamento aggressivo.</li>
-            <li><strong>Contenuti Vietati:</strong> È vietato pubblicare contenuti illegali, pornografici, violenti, o che violino i diritti d'autore.</li>
+            <li><strong>Contenuti Vietati:</strong> È vietato pubblicare contenuti illegali, pornografici, violenti, o che violino i diritti d'autore. Le foto devono essere conformi e non esplicite.</li>
             <li><strong>Privacy:</strong> Non condividere informazioni private di altre persone senza il loro esplicito consenso.</li>
             <li><strong>Uso Corretto:</strong> Non utilizzare la piattaforma per spam, phishing, o attività commerciali non autorizzate.</li>
         </ul>
-        <p>La violazione di queste regole comporterà la rimozione dei contenuti e, nei casi più gravi, la sospensione o il ban permanente dell'account.</p>
+        <p>La violazione di queste regole comporterà la rimozione dei contenuti e, nei casi più gravi, la sospensione o il ban permanente dell'account. Per segnalare abusi, utilizza il modulo di <strong>Contatto</strong> presente nel footer del sito.</p>
     </>
 );
