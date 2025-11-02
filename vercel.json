@@ -4,5 +4,15 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/fresh", "destination": "/" }
+    { "source": "/admin", "destination": "/" }
+    { "source": "/(.*)", "destination": "/" }
+  ]
+  "headers": [
+    {
+      "source": "/admin",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    }  
   ]
 }
