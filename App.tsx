@@ -27,7 +27,7 @@ import { generateFakeCheckin } from './services/fakeData';
 import ContactModal from './components/ContactModal';
 import VipInvitationModal from './components/VipInvitationModal';
 import { isVipActive } from './utils/vip';
-import AdminEmailPage from './src/pages/AdminEmail';
+import AdminEmailPage from './pages/AdminEmail';
 
 console.log({
   VipPromoModal,
@@ -252,13 +252,15 @@ const App: React.FC = () => {
   };
 
   const isAdminRoute =
-    typeof window !== 'undefined' && 
-    (window.location.pathname === '/admin' || window.location.hash === '#admin');
+    typeof window !== 'undefined' && window.location.pathname === '/admin';
 
   if (isAdminRoute) {
     return (
       <div className="h-screen w-screen bg-gray-900 text-white">
-        <Toaster position="bottom-center" toastOptions={{ className: 'bg-gray-700 text-white' }} />
+        <Toaster
+          position="bottom-center"
+          toastOptions={{ className: 'bg-gray-700 text-white' }}
+        />
         <AdminEmailPage />
       </div>  
     );
