@@ -3,10 +3,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/fresh", "destination": "/" }
-    { "source": "/admin", "destination": "/" }
+    { "source": "/fresh", "destination": "/" },
+    { "source": "/admin", "destination": "/" },
     { "source": "/(.*)", "destination": "/" }
-  ]
+  ],
   "headers": [
     {
       "source": "/admin",
