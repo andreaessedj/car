@@ -5,6 +5,7 @@ import { Checkin, Comment } from '../types';
 import { XMarkIcon, UserIcon, MapPinIcon, PaperAirplaneIcon, ArrowTopRightOnSquareIcon } from './icons';
 import { useTranslation } from '../i18n';
 import VipStatusIcon from './VipStatusIcon';
+import { useAuth } from '../hooks/useAuth';
 
 interface CheckinDetailModalProps {
     checkin: Checkin;
@@ -13,6 +14,7 @@ interface CheckinDetailModalProps {
 
 const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClose }) => {
     const { t } = useTranslation();
+    const { user, profile } = useAuth();
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(false);
@@ -52,12 +54,16 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
 
     const handleCommentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (newComment.trim() === '') return;
+        if (newComment.trim() === '' || !user || profile?.profile_type !== 'user') {
+            toast.error("Solo gli utenti possono commentare.");
+            return;
+        }
 
         setLoading(true);
         const { error } = await supabase.from('comments').insert({
             checkin_id: checkin.id,
             text: newComment.trim(),
+            user_id: user.id,
         });
 
         if (error) {
@@ -67,6 +73,8 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
         }
         setLoading(false);
     };
+    
+    const canComment = user && profile?.profile_type === 'user';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -120,19 +128,25 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
                 </div>
 
                 <div className="p-4 border-t border-gray-700">
-                    <form onSubmit={handleCommentSubmit} className="flex gap-2">
-                        <input 
-                            type="text"
-                            placeholder={t('checkinDetail.addComment')}
-                            value={newComment}
-                            onChange={e => setNewComment(e.target.value)}
-                            className="flex-1 bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                            required
-                        />
-                        <button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700 text-white font-bold p-2 rounded-md transition duration-300 disabled:bg-gray-500">
-                            <PaperAirplaneIcon className="h-6 w-6"/>
-                        </button>
-                    </form>
+                    {canComment ? (
+                        <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                            <input 
+                                type="text"
+                                placeholder={t('checkinDetail.addComment')}
+                                value={newComment}
+                                onChange={e => setNewComment(e.target.value)}
+                                className="flex-1 bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                                required
+                            />
+                            <button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700 text-white font-bold p-2 rounded-md transition duration-300 disabled:bg-gray-500">
+                                <PaperAirplaneIcon className="h-6 w-6"/>
+                            </button>
+                        </form>
+                    ) : (
+                         <p className="text-center text-gray-400 text-sm">
+                            {user ? "Solo i profili utente possono commentare." : "Devi effettuare l'accesso per poter commentare."}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
