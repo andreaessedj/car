@@ -130,9 +130,11 @@ const ChatView: React.FC<ChatViewProps> = ({ recipient, onBack, presenceChannel,
         setNewMessage('');
         
         // messaggio ottimistico locale
-        const tempId = `temp_${Date.now()}`;
+        // FIX: Use a negative number for the temporary ID to avoid type mismatch (number vs string)
+        // when comparing with real message IDs from the database. This resolves the comparison error.
+        const tempId = -Date.now();
         const optimisticMessage: Message = {
-            id: tempId as any,
+            id: tempId,
             content,
             sender_id: user.id,
             receiver_id: recipient.id,
