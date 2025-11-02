@@ -252,15 +252,13 @@ const App: React.FC = () => {
   };
 
   const isAdminRoute =
-    typeof window !== 'undefined' && window.location.pathname === '/admin';
+    typeof window !== 'undefined' && 
+    (window.location.pathname === '/admin' || window.location.hash === '#admin');
 
   if (isAdminRoute) {
     return (
       <div className="h-screen w-screen bg-gray-900 text-white">
-        <Toaster
-          position="bottom-center"
-          toastOptions={{ className: 'bg-gray-700 text-white' }}
-        />
+        <Toaster position="bottom-center" toastOptions={{ className: 'bg-gray-700 text-white' }} />
         <AdminEmailPage />
       </div>  
     );
