@@ -20,7 +20,14 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
     const [loading, setLoading] = useState(false);
     const commentsEndRef = useRef<HTMLDivElement>(null);
 
+    const isFakeCheckin = checkin.id < 0;
+
     useEffect(() => {
+        if (isFakeCheckin) {
+            setComments([]);
+            return;
+        }
+
         const fetchComments = async () => {
             const { data, error } = await supabase
                 .from('comments')
@@ -39,14 +46,20 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
 
         const channel = supabase.channel(`comments-for-${checkin.id}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments', filter: `checkin_id=eq.${checkin.id}` }, (payload) => {
-                setComments(prev => [...prev, payload.new as Comment]);
+                const newCommentPayload = payload.new as Comment;
+                setComments(prev => {
+                    if (prev.some(c => c.id === newCommentPayload.id)) {
+                        return prev;
+                    }
+                    return [...prev, newCommentPayload];
+                });
             })
             .subscribe();
         
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [checkin.id, t]);
+    }, [checkin.id, t, isFakeCheckin]);
 
     useEffect(() => {
         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,15 +73,16 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
         }
 
         setLoading(true);
-        const { error } = await supabase.from('comments').insert({
+        const { data: insertedComment, error } = await supabase.from('comments').insert({
             checkin_id: checkin.id,
             text: newComment.trim(),
             user_id: user.id,
-        });
+        }).select().single();
 
         if (error) {
             toast.error(error.message);
-        } else {
+        } else if (insertedComment) {
+            setComments(prev => [...prev, insertedComment]);
             setNewComment('');
         }
         setLoading(false);
@@ -128,7 +142,11 @@ const CheckinDetailModal: React.FC<CheckinDetailModalProps> = ({ checkin, onClos
                 </div>
 
                 <div className="p-4 border-t border-gray-700">
-                    {canComment ? (
+                    {isFakeCheckin ? (
+                        <p className="text-center text-gray-400 text-sm">
+                           Non è possibile commentare i check-in dimostrativi.
+                        </p>
+                    ) : canComment ? (
                         <form onSubmit={handleCommentSubmit} className="flex gap-2">
                             <input 
                                 type="text"
